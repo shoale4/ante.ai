@@ -1,6 +1,8 @@
 import { getGameOdds, getLineMovements } from "@/lib/data";
 import { LineMovements } from "@/components/LineMovements";
 import { SportTabs } from "@/components/SportTabs";
+import { NewsFeed } from "@/components/NewsFeed";
+import { getMockNews } from "@/lib/news";
 
 export const revalidate = 300; // Revalidate every 5 minutes
 
@@ -9,6 +11,9 @@ export default async function Home() {
     getGameOdds(),
     getLineMovements(),
   ]);
+
+  // Get news (mock data for now, will be replaced with real API)
+  const news = getMockNews();
 
   const nflGames = games.filter((g) => g.sport === "NFL");
   const nbaGames = games.filter((g) => g.sport === "NBA");
@@ -56,23 +61,40 @@ export default async function Home() {
           <SportTabs nflGames={nflGames} nbaGames={nbaGames} />
         </section>
 
-        {/* Line Movements Section */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Line Movements</h2>
-              <p className="text-[--text-secondary] mt-1">Track where the sharp money is going</p>
+        {/* Two Column Layout for Line Movements and News */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Line Movements Section */}
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Line Movements</h2>
+                <p className="text-[--text-secondary] mt-1">Sharp money tracker</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span className="text-sm font-medium text-green-600">Live</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-              </span>
-              <span className="text-sm font-medium text-green-600">Live</span>
+            <LineMovements movements={movements.slice(0, 10)} />
+          </section>
+
+          {/* News Section */}
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Breaking News</h2>
+                <p className="text-[--text-secondary] mt-1">Injuries, trades & lineup changes</p>
+              </div>
+              <a href="#" className="text-sm font-medium text-[--accent] hover:underline">
+                View all
+              </a>
             </div>
-          </div>
-          <LineMovements movements={movements.slice(0, 15)} />
-        </section>
+            <NewsFeed news={news} />
+          </section>
+        </div>
 
         {/* Empty State */}
         {games.length === 0 && movements.length === 0 && (
