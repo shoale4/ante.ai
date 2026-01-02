@@ -9,57 +9,59 @@ interface Props {
 export function LineMovements({ movements }: Props) {
   if (movements.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-center">
-        No significant line movements detected yet. Check back after more data
-        is collected.
+      <div className="glass-card p-8 text-center">
+        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-6 h-6 text-[--text-secondary]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <p className="text-[--text-secondary] font-medium">No significant line movements yet</p>
+        <p className="text-sm text-[--text-secondary] mt-1">
+          Check back after more data is collected
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
+    <div className="glass-card overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-900 text-gray-300">
-            <tr>
-              <th className="px-4 py-3 text-left">Game</th>
-              <th className="px-4 py-3 text-left">Market</th>
-              <th className="px-4 py-3 text-left">Book</th>
-              <th className="px-4 py-3 text-right">Open</th>
-              <th className="px-4 py-3 text-right">Current</th>
-              <th className="px-4 py-3 text-right">Movement</th>
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-200/60">
+              <th className="px-5 py-4 text-left text-sm font-medium text-[--text-secondary]">Game</th>
+              <th className="px-5 py-4 text-left text-sm font-medium text-[--text-secondary]">Market</th>
+              <th className="px-5 py-4 text-left text-sm font-medium text-[--text-secondary]">Book</th>
+              <th className="px-5 py-4 text-right text-sm font-medium text-[--text-secondary]">Open</th>
+              <th className="px-5 py-4 text-right text-sm font-medium text-[--text-secondary]">Current</th>
+              <th className="px-5 py-4 text-right text-sm font-medium text-[--text-secondary]">Move</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-gray-200/60">
             {movements.map((m, i) => (
-              <tr key={i} className="hover:bg-gray-750">
-                <td className="px-4 py-3">
-                  <div className="font-medium text-white">
+              <tr key={i} className="hover:bg-gray-100/50">
+                <td className="px-5 py-4">
+                  <div className="font-medium text-[--foreground]">
                     {m.awayTeam} @ {m.homeTeam}
                   </div>
-                  <div className="text-xs text-gray-400">
-                    {m.sport} &middot;{" "}
-                    {new Date(m.eventStartTime).toLocaleDateString()}
+                  <div className="text-sm text-[--text-secondary]">
+                    {m.sport} · {new Date(m.eventStartTime).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <span className="text-gray-300 capitalize">
-                    {m.marketType}
-                  </span>
-                  <span className="text-gray-500 ml-1">({m.outcome})</span>
+                <td className="px-5 py-4">
+                  <span className="capitalize text-[--foreground]">{m.marketType}</span>
+                  <span className="text-[--text-secondary] ml-1">({m.outcome})</span>
                 </td>
-                <td className="px-4 py-3">
-                  <span className="bg-gray-700 px-2 py-1 rounded text-xs font-medium text-gray-200">
-                    {m.book}
-                  </span>
+                <td className="px-5 py-4">
+                  <span className="pill pill-gray capitalize">{m.book}</span>
                 </td>
-                <td className="px-4 py-3 text-right text-gray-400">
+                <td className="px-5 py-4 text-right text-[--text-secondary]">
                   {formatOdds(m.openingPrice, m.openingLine, m.marketType)}
                 </td>
-                <td className="px-4 py-3 text-right text-white font-medium">
+                <td className="px-5 py-4 text-right font-medium text-[--foreground]">
                   {formatOdds(m.currentPrice, m.currentLine, m.marketType)}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-5 py-4 text-right">
                   <MovementBadge
                     lineMovement={m.lineMovement}
                     priceMovement={m.priceMovement}
@@ -75,11 +77,7 @@ export function LineMovements({ movements }: Props) {
   );
 }
 
-function formatOdds(
-  price: number,
-  line: number | null,
-  marketType: string
-): string {
+function formatOdds(price: number, line: number | null, marketType: string): string {
   const priceStr = price > 0 ? `+${price}` : `${price}`;
 
   if (marketType === "moneyline") {
@@ -107,7 +105,7 @@ function MovementBadge({
   const hasPriceMove = priceMovement !== 0;
 
   if (!hasLineMove && !hasPriceMove) {
-    return <span className="text-gray-500">-</span>;
+    return <span className="text-[--text-secondary]">—</span>;
   }
 
   const parts: string[] = [];
@@ -122,15 +120,11 @@ function MovementBadge({
     parts.push(`${sign}${priceMovement}`);
   }
 
-  const isPositive =
-    (lineMovement && lineMovement > 0) || (!lineMovement && priceMovement > 0);
-  const colorClass = isPositive
-    ? "bg-green-900/50 text-green-400"
-    : "bg-red-900/50 text-red-400";
+  const isPositive = (lineMovement && lineMovement > 0) || (!lineMovement && priceMovement > 0);
 
   return (
-    <span className={`px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
-      {parts.join(" / ")}
+    <span className={`pill ${isPositive ? "pill-green" : "pill-red"}`}>
+      {isPositive ? "↑" : "↓"} {parts.join(" / ")}
     </span>
   );
 }

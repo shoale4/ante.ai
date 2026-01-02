@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f2f2f7;
+  --foreground: #1c1c1e;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(0, 0, 0, 0.06);
+  --accent: #007aff;
+  --accent-green: #30d158;
+  --accent-red: #ff453a;
+  --accent-orange: #ff9f0a;
+  --accent-purple: #bf5af2;
+  --text-secondary: #8e8e93;
+
+  /* Sport colors */
+  --nba-primary: #c9082a;
+  --nba-secondary: #17408b;
+  --nfl-primary: #013369;
+  --nfl-secondary: #d50a0a;
 }
 
 @theme inline {
@@ -12,15 +26,172 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 24px 48px rgba(0, 0, 0, 0.06);
+}
+
+/* Pill badges */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pill-gray {
+  background: rgba(142, 142, 147, 0.12);
+  color: #636366;
+}
+
+.pill-green {
+  background: rgba(48, 209, 88, 0.15);
+  color: #248a3d;
+}
+
+.pill-red {
+  background: rgba(255, 69, 58, 0.15);
+  color: #d70015;
+}
+
+.pill-blue {
+  background: rgba(0, 122, 255, 0.15);
+  color: #0066cc;
+}
+
+.pill-orange {
+  background: rgba(255, 159, 10, 0.15);
+  color: #c93400;
+}
+
+.pill-purple {
+  background: rgba(191, 90, 242, 0.15);
+  color: #8944ab;
+}
+
+/* Gradient backgrounds */
+.gradient-nba {
+  background: linear-gradient(135deg, #c9082a 0%, #17408b 100%);
+}
+
+.gradient-nfl {
+  background: linear-gradient(135deg, #013369 0%, #d50a0a 100%);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #30d158 0%, #00c7be 100%);
+}
+
+.gradient-blue {
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+}
+
+.gradient-orange {
+  background: linear-gradient(135deg, #ff9f0a 0%, #ff453a 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #bf5af2 0%, #ff2d55 100%);
+}
+
+/* Team avatar colors - cycle through these */
+.team-avatar-1 { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); }
+.team-avatar-2 { background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); }
+.team-avatar-3 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.team-avatar-4 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.team-avatar-5 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.team-avatar-6 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.team-avatar-7 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333 !important; }
+.team-avatar-8 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333 !important; }
+
+/* Odds display */
+.odds-positive {
+  color: #248a3d;
+  font-weight: 700;
+}
+
+.odds-negative {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.odds-big-positive {
+  color: #248a3d;
+  font-weight: 700;
+  background: rgba(48, 209, 88, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Active tab styles */
+.tab-active {
+  background: linear-gradient(135deg, #1c1c1e 0%, #3a3a3c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tab-inactive {
+  background: white;
+  color: #1c1c1e;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tab-inactive:hover {
+  background: #f9f9f9;
 }
