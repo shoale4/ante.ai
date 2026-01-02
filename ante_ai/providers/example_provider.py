@@ -1,0 +1,339 @@
+"""Example odds provider for testing and development."""
+
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, List, Optional
+
+import requests
+
+from ante_ai.models import EventOdds, MarketOdds, OutcomeOdds
+from ante_ai.providers.base import OddsProvider
+
+logger = logging.getLogger(__name__)
+
+
+class ExampleProvider(OddsProvider):
+    """Example provider that can fetch from a real API or return stub data."""
+
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        regions: List[str],
+        books: List[str],
+        raw_directory: Optional[str] = None,
+    ):
+        self.base_url = base_url
+        self.api_key = api_key
+        self.regions = regions
+        self.books = books
+        self.raw_directory = Path(raw_directory) if raw_directory else None
+        self._book_name = books[0] if books else "example_book"
+
+    @property
+    def book_name(self) -> str:
+        return self._book_name
+
+    def fetch_odds(self, sports: List[str]) -> List[EventOdds]:
+        """Fetch odds for the given sports.
+
+        If API key is 'STUB' or API call fails, returns stub data for testing.
+        """
+        if self.api_key == "STUB":
+            logger.info("Using stub data (API key is STUB)")
+            return self._get_stub_data(sports)
+
+        all_events: List[EventOdds] = []
+
+        for sport in sports:
+            try:
+                events = self._fetch_sport(sport)
+                all_events.extend(events)
+            except Exception as e:
+                logger.warning(f"Failed to fetch {sport}, using stub data: {e}")
+                all_events.extend(self._get_stub_data([sport]))
+
+        return all_events
+
+    def _fetch_sport(self, sport: str) -> List[EventOdds]:
+        """Fetch odds for a single sport from the API."""
+        params = {
+            "apiKey": self.api_key,
+            "regions": ",".join(self.regions),
+            "markets": "h2h,spreads,totals",
+            "oddsFormat": "american",
+            "bookmakers": ",".join(self.books),
+        }
+
+        url = f"{self.base_url}/{sport}/odds"
+        logger.info(f"Fetching odds from {url}")
+
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+
+        # Save raw response for debugging
+        if self.raw_directory:
+            self._save_raw(sport, data)
+
+        return self._parse_response(data, sport)
+
+    def _save_raw(self, sport: str, data: Any) -> None:
+        """Save raw API response to file."""
+        self.raw_directory.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filename = self.raw_directory / f"{sport}_{timestamp}.json"
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=2)
+        logger.info(f"Saved raw response to {filename}")
+
+    def _parse_response(self, data: List[dict], sport: str) -> List[EventOdds]:
+        """Parse API response into EventOdds objects."""
+        events: List[EventOdds] = []
+
+        for event_data in data:
+            event_id = event_data.get("id", "")
+            home_team = event_data.get("home_team", "")
+            away_team = event_data.get("away_team", "")
+            commence_time = event_data.get("commence_time")
+
+            start_time = None
+            if commence_time:
+                try:
+                    start_time = datetime.fromisoformat(commence_time.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+
+            # Parse bookmakers
+            markets: List[MarketOdds] = []
+            for bookmaker in event_data.get("bookmakers", []):
+                if bookmaker.get("key") not in self.books:
+                    continue
+
+                for market_data in bookmaker.get("markets", []):
+                    market = self._parse_market(market_data, home_team, away_team)
+                    if market:
+                        markets.append(market)
+
+            if markets:
+                events.append(
+                    EventOdds(
+                        event_id=event_id,
+                        sport=self._normalize_sport(sport),
+                        home_team=home_team,
+                        away_team=away_team,
+                        start_time=start_time,
+                        markets=markets,
+                    )
+                )
+
+        return events
+
+    def _parse_market(
+        self, market_data: dict, home_team: str, away_team: str
+    ) -> Optional[MarketOdds]:
+        """Parse a single market from API response."""
+        market_key = market_data.get("key", "")
+        outcomes_data = market_data.get("outcomes", [])
+
+        if market_key == "h2h":
+            # Moneyline
+            outcomes = []
+            for o in outcomes_data:
+                name = o.get("name", "")
+                price = o.get("price", 0)
+                if name == home_team:
+                    outcomes.append(OutcomeOdds(outcome="home", price=price))
+                elif name == away_team:
+                    outcomes.append(OutcomeOdds(outcome="away", price=price))
+            if outcomes:
+                return MarketOdds(market_type="moneyline", outcomes=outcomes)
+
+        elif market_key == "spreads":
+            # Spread
+            outcomes = []
+            for o in outcomes_data:
+                name = o.get("name", "")
+                price = o.get("price", 0)
+                point = o.get("point", 0.0)
+                if name == home_team:
+                    outcomes.append(OutcomeOdds(outcome="home", price=price, line=point))
+                elif name == away_team:
+                    outcomes.append(OutcomeOdds(outcome="away", price=price, line=point))
+            if outcomes:
+                return MarketOdds(market_type="spread", outcomes=outcomes)
+
+        elif market_key == "totals":
+            # Total (over/under)
+            outcomes = []
+            for o in outcomes_data:
+                name = o.get("name", "").lower()
+                price = o.get("price", 0)
+                point = o.get("point", 0.0)
+                if name == "over":
+                    outcomes.append(OutcomeOdds(outcome="over", price=price, line=point))
+                elif name == "under":
+                    outcomes.append(OutcomeOdds(outcome="under", price=price, line=point))
+            if outcomes:
+                return MarketOdds(market_type="total", outcomes=outcomes)
+
+        return None
+
+    def _normalize_sport(self, sport: str) -> str:
+        """Normalize sport identifier to readable format."""
+        mapping = {
+            "americanfootball_nfl": "NFL",
+            "basketball_nba": "NBA",
+            "americanfootball_ncaaf": "NCAAF",
+            "basketball_ncaab": "NCAAB",
+        }
+        return mapping.get(sport, sport.upper())
+
+    def _get_stub_data(self, sports: List[str]) -> List[EventOdds]:
+        """Return stub data for testing without an API."""
+        events: List[EventOdds] = []
+        now = datetime.now(timezone.utc)
+
+        for sport in sports:
+            normalized = self._normalize_sport(sport)
+
+            if "nfl" in sport.lower():
+                events.extend(self._create_nfl_stub_events(now))
+            elif "nba" in sport.lower():
+                events.extend(self._create_nba_stub_events(now))
+
+        return events
+
+    def _create_nfl_stub_events(self, now: datetime) -> List[EventOdds]:
+        """Create stub NFL events."""
+        return [
+            EventOdds(
+                event_id="nfl_stub_001",
+                sport="NFL",
+                home_team="Kansas City Chiefs",
+                away_team="Buffalo Bills",
+                start_time=now + timedelta(days=2),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-150),
+                            OutcomeOdds(outcome="away", price=130),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-110, line=-3.0),
+                            OutcomeOdds(outcome="away", price=-110, line=3.0),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-110, line=47.5),
+                            OutcomeOdds(outcome="under", price=-110, line=47.5),
+                        ],
+                    ),
+                ],
+            ),
+            EventOdds(
+                event_id="nfl_stub_002",
+                sport="NFL",
+                home_team="San Francisco 49ers",
+                away_team="Dallas Cowboys",
+                start_time=now + timedelta(days=3),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-180),
+                            OutcomeOdds(outcome="away", price=155),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-105, line=-4.0),
+                            OutcomeOdds(outcome="away", price=-115, line=4.0),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-108, line=49.0),
+                            OutcomeOdds(outcome="under", price=-112, line=49.0),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+
+    def _create_nba_stub_events(self, now: datetime) -> List[EventOdds]:
+        """Create stub NBA events."""
+        return [
+            EventOdds(
+                event_id="nba_stub_001",
+                sport="NBA",
+                home_team="Los Angeles Lakers",
+                away_team="Boston Celtics",
+                start_time=now + timedelta(days=1),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=120),
+                            OutcomeOdds(outcome="away", price=-140),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-110, line=2.5),
+                            OutcomeOdds(outcome="away", price=-110, line=-2.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-110, line=225.5),
+                            OutcomeOdds(outcome="under", price=-110, line=225.5),
+                        ],
+                    ),
+                ],
+            ),
+            EventOdds(
+                event_id="nba_stub_002",
+                sport="NBA",
+                home_team="Golden State Warriors",
+                away_team="Phoenix Suns",
+                start_time=now + timedelta(days=1, hours=3),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-165),
+                            OutcomeOdds(outcome="away", price=145),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-108, line=-4.0),
+                            OutcomeOdds(outcome="away", price=-112, line=4.0),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-105, line=232.0),
+                            OutcomeOdds(outcome="under", price=-115, line=232.0),
+                        ],
+                    ),
+                ],
+            ),
+        ]

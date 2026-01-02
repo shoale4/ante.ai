@@ -1,0 +1,15 @@
+{
+  "provider": {
+    "type": "example",
+    "base_url": "https://api.the-odds-api.com/v4/sports",
+    "api_key": "STUB",
+    "regions": ["us"],
+    "books": ["fanduel"],
+    "sports": ["americanfootball_nfl", "basketball_nba"]
+  },
+  "storage": {
+    "history_path": "data/history/odds_history.csv",
+    "latest_path": "data/latest/latest.csv",
+    "raw_directory": "data/raw"
+  }
+}

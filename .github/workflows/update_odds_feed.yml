@@ -1,0 +1,54 @@
+name: Update Odds Feed
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    # Allow manual triggers
+
+jobs:
+  update-feed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create config from template
+        run: |
+          # Use config.example.json as base, override API key from secret
+          cp config.example.json config.json
+          # If API_KEY secret is set, update the config
+          if [ -n "${{ secrets.ODDS_API_KEY }}" ]; then
+            sed -i 's/"api_key": "STUB"/"api_key": "${{ secrets.ODDS_API_KEY }}"/' config.json
+          fi
+
+      - name: Run odds feed update
+        run: python -m ante_ai.cli --config config.json
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Add data files
+          git add data/history/odds_history.csv data/latest/latest.csv
+
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update odds feed - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          fi
