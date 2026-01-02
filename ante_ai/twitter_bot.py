@@ -172,6 +172,10 @@ def post_tweet(client: tweepy.Client, text: str) -> bool:
         return True
     except tweepy.TweepyException as e:
         print(f"Failed to post tweet: {e}")
+        # Print full error details
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Status code: {e.response.status_code}")
+            print(f"Response: {e.response.text}")
         return False
 
 
