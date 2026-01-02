@@ -2,9 +2,9 @@ name: Update Odds Feed
 
 on:
   schedule:
-    # Run 6 times per day (every 4 hours) to stay within free API tier
-    # Times: 12am, 4am, 8am, 12pm, 4pm, 8pm UTC
-    - cron: "0 */4 * * *"
+    # Run 4 times per day (every 6 hours) to stay within free API tier
+    # Times: 12am, 6am, 12pm, 6pm UTC
+    - cron: "0 */6 * * *"
   workflow_dispatch:
     # Allow manual triggers
 
