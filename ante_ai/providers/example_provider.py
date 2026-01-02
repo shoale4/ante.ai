@@ -111,11 +111,12 @@ class ExampleProvider(OddsProvider):
             # Parse bookmakers
             markets: List[MarketOdds] = []
             for bookmaker in event_data.get("bookmakers", []):
-                if bookmaker.get("key") not in self.books:
+                book_key = bookmaker.get("key", "")
+                if book_key not in self.books:
                     continue
 
                 for market_data in bookmaker.get("markets", []):
-                    market = self._parse_market(market_data, home_team, away_team)
+                    market = self._parse_market(market_data, home_team, away_team, book_key)
                     if market:
                         markets.append(market)
 
@@ -134,7 +135,7 @@ class ExampleProvider(OddsProvider):
         return events
 
     def _parse_market(
-        self, market_data: dict, home_team: str, away_team: str
+        self, market_data: dict, home_team: str, away_team: str, book: str
     ) -> Optional[MarketOdds]:
         """Parse a single market from API response."""
         market_key = market_data.get("key", "")
@@ -151,7 +152,7 @@ class ExampleProvider(OddsProvider):
                 elif name == away_team:
                     outcomes.append(OutcomeOdds(outcome="away", price=price))
             if outcomes:
-                return MarketOdds(market_type="moneyline", outcomes=outcomes)
+                return MarketOdds(market_type="moneyline", book=book, outcomes=outcomes)
 
         elif market_key == "spreads":
             # Spread
@@ -165,7 +166,7 @@ class ExampleProvider(OddsProvider):
                 elif name == away_team:
                     outcomes.append(OutcomeOdds(outcome="away", price=price, line=point))
             if outcomes:
-                return MarketOdds(market_type="spread", outcomes=outcomes)
+                return MarketOdds(market_type="spread", book=book, outcomes=outcomes)
 
         elif market_key == "totals":
             # Total (over/under)
@@ -179,7 +180,7 @@ class ExampleProvider(OddsProvider):
                 elif name == "under":
                     outcomes.append(OutcomeOdds(outcome="under", price=price, line=point))
             if outcomes:
-                return MarketOdds(market_type="total", outcomes=outcomes)
+                return MarketOdds(market_type="total", book=book, outcomes=outcomes)
 
         return None
 
@@ -220,6 +221,7 @@ class ExampleProvider(OddsProvider):
                 markets=[
                     MarketOdds(
                         market_type="moneyline",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-150),
                             OutcomeOdds(outcome="away", price=130),
@@ -227,6 +229,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="spread",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-110, line=-3.0),
                             OutcomeOdds(outcome="away", price=-110, line=3.0),
@@ -234,6 +237,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="total",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="over", price=-110, line=47.5),
                             OutcomeOdds(outcome="under", price=-110, line=47.5),
@@ -250,6 +254,7 @@ class ExampleProvider(OddsProvider):
                 markets=[
                     MarketOdds(
                         market_type="moneyline",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-180),
                             OutcomeOdds(outcome="away", price=155),
@@ -257,6 +262,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="spread",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-105, line=-4.0),
                             OutcomeOdds(outcome="away", price=-115, line=4.0),
@@ -264,6 +270,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="total",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="over", price=-108, line=49.0),
                             OutcomeOdds(outcome="under", price=-112, line=49.0),
@@ -285,6 +292,7 @@ class ExampleProvider(OddsProvider):
                 markets=[
                     MarketOdds(
                         market_type="moneyline",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=120),
                             OutcomeOdds(outcome="away", price=-140),
@@ -292,6 +300,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="spread",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-110, line=2.5),
                             OutcomeOdds(outcome="away", price=-110, line=-2.5),
@@ -299,6 +308,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="total",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="over", price=-110, line=225.5),
                             OutcomeOdds(outcome="under", price=-110, line=225.5),
@@ -315,6 +325,7 @@ class ExampleProvider(OddsProvider):
                 markets=[
                     MarketOdds(
                         market_type="moneyline",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-165),
                             OutcomeOdds(outcome="away", price=145),
@@ -322,6 +333,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="spread",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=-108, line=-4.0),
                             OutcomeOdds(outcome="away", price=-112, line=4.0),
@@ -329,6 +341,7 @@ class ExampleProvider(OddsProvider):
                     ),
                     MarketOdds(
                         market_type="total",
+                        book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="over", price=-105, line=232.0),
                             OutcomeOdds(outcome="under", price=-115, line=232.0),

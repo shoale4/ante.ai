@@ -21,6 +21,7 @@ class MarketOdds:
     """Represents a market within an event."""
 
     market_type: Literal["moneyline", "spread", "total"]
+    book: str = ""  # Sportsbook identifier
     outcomes: List[OutcomeOdds] = field(default_factory=list)
 
 

@@ -86,7 +86,7 @@ def run_update(config: dict) -> None:
 
     # Flatten events into rows
     timestamp = datetime.now(timezone.utc)
-    rows = storage.flatten_events(events, book=provider.book_name, timestamp=timestamp)
+    rows = storage.flatten_events(events, timestamp=timestamp)
     logger.info(f"Flattened into {len(rows)} odds rows")
 
     # Append to history

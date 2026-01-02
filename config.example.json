@@ -4,7 +4,7 @@
     "base_url": "https://api.the-odds-api.com/v4/sports",
     "api_key": "YOUR_API_KEY",
     "regions": ["us"],
-    "books": ["fanduel"],
+    "books": ["fanduel", "draftkings", "betmgm", "caesars", "pointsbetus", "bet365", "betonlineag"],
     "sports": ["americanfootball_nfl", "basketball_nba"]
   },
   "storage": {

@@ -26,7 +26,7 @@ class OddsStorage:
         self.latest_path.parent.mkdir(parents=True, exist_ok=True)
 
     def flatten_events(
-        self, events: List[EventOdds], book: str, timestamp: Optional[datetime] = None
+        self, events: List[EventOdds], timestamp: Optional[datetime] = None
     ) -> List[OddsRow]:
         """Flatten EventOdds objects into OddsRow records."""
         if timestamp is None:
@@ -42,7 +42,7 @@ class OddsStorage:
                 for outcome in market.outcomes:
                     row = OddsRow(
                         timestamp_utc=timestamp_str,
-                        book=book,
+                        book=market.book,
                         sport=event.sport,
                         event_id=event.event_id,
                         event_start_time=start_time_str,
