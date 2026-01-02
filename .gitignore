@@ -38,3 +38,4 @@ config.json
 # Keep data directories but ignore contents (except .gitkeep)
 data/raw/*
 !data/raw/.gitkeep
+.env.twitter

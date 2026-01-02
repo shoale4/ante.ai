@@ -10,14 +10,35 @@ from typing import Optional
 import tweepy
 
 
-def get_twitter_client() -> tweepy.Client:
-    """Create authenticated Twitter API v2 client."""
-    return tweepy.Client(
-        consumer_key=os.environ["TWITTER_API_KEY"],
-        consumer_secret=os.environ["TWITTER_API_SECRET"],
-        access_token=os.environ["TWITTER_ACCESS_TOKEN"],
-        access_token_secret=os.environ["TWITTER_ACCESS_SECRET"],
+def get_access_token():
+    """Get a fresh OAuth 2.0 access token using refresh token."""
+    import requests
+
+    client_id = os.environ["TWITTER_CLIENT_ID"]
+    client_secret = os.environ["TWITTER_CLIENT_SECRET"]
+    refresh_token = os.environ["TWITTER_REFRESH_TOKEN"]
+
+    response = requests.post(
+        "https://api.twitter.com/2/oauth2/token",
+        data={
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "client_id": client_id,
+        },
+        auth=(client_id, client_secret),
     )
+
+    if response.status_code == 200:
+        data = response.json()
+        return data["access_token"]
+    else:
+        raise Exception(f"Failed to refresh token: {response.text}")
+
+
+def get_twitter_client():
+    """Create authenticated Twitter API client using OAuth 2.0."""
+    access_token = get_access_token()
+    return access_token  # Return raw token for direct API calls
 
 
 def load_latest_odds(filepath: str = "data/latest/latest.csv") -> list[dict]:
@@ -164,18 +185,30 @@ def format_daily_recap(movements: list[dict]) -> Optional[str]:
     return "\n".join(lines)
 
 
-def post_tweet(client: tweepy.Client, text: str) -> bool:
-    """Post a tweet and return success status."""
+def post_tweet(access_token: str, text: str) -> bool:
+    """Post a tweet using OAuth 2.0 access token."""
+    import requests
+
     try:
-        response = client.create_tweet(text=text)
-        print(f"Tweet posted: {response.data['id']}")
-        return True
-    except tweepy.TweepyException as e:
-        print(f"Failed to post tweet: {e}")
-        # Print full error details
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Status code: {e.response.status_code}")
-            print(f"Response: {e.response.text}")
+        response = requests.post(
+            "https://api.twitter.com/2/tweets",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+            json={"text": text},
+        )
+
+        if response.status_code == 201:
+            tweet_id = response.json()["data"]["id"]
+            print(f"Tweet posted: {tweet_id}")
+            return True
+        else:
+            print(f"Failed to post tweet: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+    except Exception as e:
+        print(f"Error posting tweet: {e}")
         return False
 
 
