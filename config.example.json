@@ -2,7 +2,7 @@
   "provider": {
     "type": "example",
     "base_url": "https://api.the-odds-api.com/v4/sports",
-    "api_key": "STUB",
+    "api_key": "YOUR_API_KEY",
     "regions": ["us"],
     "books": ["fanduel"],
     "sports": ["americanfootball_nfl", "basketball_nba"]
