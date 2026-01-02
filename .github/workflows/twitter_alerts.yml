@@ -19,6 +19,11 @@ on:
         required: false
         default: 'false'
         type: boolean
+      test_tweet:
+        description: 'Post a test tweet'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   post-alerts:
@@ -54,10 +59,14 @@ jobs:
           TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
         run: |
           ARGS=""
-          if [ "${{ github.event.inputs.recap_only }}" == "true" ]; then
-            ARGS="$ARGS --recap"
-          fi
-          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
-            ARGS="$ARGS --dry-run"
+          if [ "${{ github.event.inputs.test_tweet }}" == "true" ]; then
+            ARGS="--test"
+          else
+            if [ "${{ github.event.inputs.recap_only }}" == "true" ]; then
+              ARGS="$ARGS --recap"
+            fi
+            if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+              ARGS="$ARGS --dry-run"
+            fi
           fi
           python -m ante_ai.twitter_bot $ARGS

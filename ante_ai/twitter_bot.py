@@ -232,6 +232,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ante AI Twitter Bot")
     parser.add_argument("--dry-run", action="store_true", help="Print tweets without posting")
     parser.add_argument("--recap", action="store_true", help="Post daily recap only")
+    parser.add_argument("--test", action="store_true", help="Post a test tweet")
 
     args = parser.parse_args()
-    run_alerts(dry_run=args.dry_run, recap_only=args.recap)
+
+    if args.test:
+        client = get_twitter_client()
+        test_tweet = "🎯 Ante AI is live! Tracking line movements across NFL & NBA.\n\n🔗 ante-ai.vercel.app"
+        print(f"Posting test tweet:\n{test_tweet}")
+        post_tweet(client, test_tweet)
+    else:
+        run_alerts(dry_run=args.dry_run, recap_only=args.recap)
