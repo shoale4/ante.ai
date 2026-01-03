@@ -34,14 +34,25 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <span className="text-white font-bold text-lg">A</span>
+              {/* Logo Icon */}
+              <div className="relative">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-purple-500/30 rotate-3 hover:rotate-0 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                    <polyline points="16 7 22 7 22 13"></polyline>
+                  </svg>
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center shadow-md">
+                  <span className="text-white text-[8px] font-bold">AI</span>
+                </div>
               </div>
+              {/* Logo Text */}
               <div>
-                <h1 className="text-xl font-bold tracking-tight">
-                  Ante<span className="text-[--accent]">AI</span>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">ante</span>
+                  <span className="text-gray-800">.ai</span>
                 </h1>
-                <p className="text-xs text-[--text-secondary]">Smart odds tracking</p>
+                <p className="text-[10px] font-medium text-[--text-secondary] tracking-widest uppercase">Smart Odds Tracking</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
