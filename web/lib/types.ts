@@ -58,3 +58,38 @@ export interface LineMovement {
   lineMovement: number | null;
   lastUpdated: string;
 }
+
+// Unified feed item types
+import type { NewsItem } from "./news";
+import type { GameWeather } from "./weather";
+
+export type FeedItemType = "game" | "movement" | "news";
+
+export type Sport = "NFL" | "NBA" | "MLB" | "NHL" | "MMA" | "Soccer";
+
+export interface GameFeedItem {
+  type: "game";
+  id: string;
+  sport: Sport;
+  timestamp: Date;
+  data: GameOdds;
+  weather?: GameWeather;
+}
+
+export interface MovementFeedItem {
+  type: "movement";
+  id: string;
+  sport: Sport;
+  timestamp: Date;
+  data: LineMovement;
+}
+
+export interface NewsFeedItem {
+  type: "news";
+  id: string;
+  sport: Sport | "General";
+  timestamp: Date;
+  data: NewsItem;
+}
+
+export type FeedItem = GameFeedItem | MovementFeedItem | NewsFeedItem;

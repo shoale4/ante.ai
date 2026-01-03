@@ -1,4 +1,4 @@
-import { getStadiumForTeam, isOutdoorStadium } from "./stadiums";
+import { getStadiumForTeam, isOutdoorStadium, NFL_STADIUMS } from "./stadiums";
 
 export interface GameWeather {
   temperature: number; // Fahrenheit
@@ -225,7 +225,7 @@ export async function getWeatherForGames(
 
   // Only fetch for NFL games (check team names)
   const nflGames = games.filter((g) =>
-    Object.keys(require("./stadiums").NFL_STADIUMS).includes(g.homeTeam)
+    Object.keys(NFL_STADIUMS).includes(g.homeTeam)
   );
 
   await Promise.all(

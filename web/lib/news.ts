@@ -6,11 +6,12 @@ export interface NewsItem {
   source: string;
   sourceIcon: string;
   publishedAt: string;
-  sport: "NFL" | "NBA" | "MLB" | "NHL" | "General";
+  sport: "NFL" | "NBA" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
   teams: string[]; // Affected teams
   sentiment: "positive" | "negative" | "neutral";
   isBreaking: boolean;
   category: "injury" | "trade" | "lineup" | "weather" | "general";
+  imageUrl?: string;
 }
 
 // RSS Feed URLs for sports news

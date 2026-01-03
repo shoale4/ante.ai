@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import { getTeamLogo } from "@/lib/teamLogos";
+import { Sport } from "@/lib/types";
 
 interface Props {
   teamName: string;
-  sport: "NFL" | "NBA";
+  sport: Sport;
   fallbackClass: string;
 }
 
