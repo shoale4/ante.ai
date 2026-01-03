@@ -10,7 +10,7 @@ from typing import Any, List, Optional
 
 import requests
 
-from ante_ai.models import EventOdds, MarketOdds, OutcomeOdds
+from ante_ai.models import EventOdds, MarketOdds, OutcomeOdds, PlayerPropOdds
 from ante_ai.providers.base import OddsProvider
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ class ExampleProvider(OddsProvider):
         regions: List[str],
         books: List[str],
         raw_directory: Optional[str] = None,
+        player_prop_markets: Optional[List[str]] = None,
     ):
         self.base_url = base_url
         self.api_key = api_key
@@ -33,6 +34,7 @@ class ExampleProvider(OddsProvider):
         self.books = books
         self.raw_directory = Path(raw_directory) if raw_directory else None
         self._book_name = books[0] if books else "example_book"
+        self.player_prop_markets = player_prop_markets or []
 
     @property
     def book_name(self) -> str:
@@ -183,6 +185,67 @@ class ExampleProvider(OddsProvider):
                 return MarketOdds(market_type="total", book=book, outcomes=outcomes)
 
         return None
+
+    def fetch_player_props(self, sport: str, event_id: str) -> List[PlayerPropOdds]:
+        """Fetch player props for a specific event."""
+        if not self.player_prop_markets or self.api_key == "STUB":
+            return []
+
+        try:
+            params = {
+                "apiKey": self.api_key,
+                "regions": ",".join(self.regions),
+                "markets": ",".join(self.player_prop_markets),
+                "oddsFormat": "american",
+                "bookmakers": ",".join(self.books),
+            }
+
+            url = f"{self.base_url}/{sport}/events/{event_id}/odds"
+            logger.info(f"Fetching player props from {url}")
+
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            return self._parse_player_props(data)
+        except Exception as e:
+            logger.warning(f"Failed to fetch player props for {event_id}: {e}")
+            return []
+
+    def _parse_player_props(self, data: dict) -> List[PlayerPropOdds]:
+        """Parse player props from API response."""
+        props: List[PlayerPropOdds] = []
+
+        for bookmaker in data.get("bookmakers", []):
+            book_key = bookmaker.get("key", "")
+            if book_key not in self.books:
+                continue
+
+            for market_data in bookmaker.get("markets", []):
+                market_key = market_data.get("key", "")
+                if not market_key.startswith("player_"):
+                    continue
+
+                for outcome in market_data.get("outcomes", []):
+                    # Player props have 'description' for player name
+                    player_name = outcome.get("description", "")
+                    outcome_name = outcome.get("name", "").lower()
+                    price = outcome.get("price", 0)
+                    line = outcome.get("point", 0.0)
+
+                    if player_name and outcome_name in ("over", "under"):
+                        props.append(
+                            PlayerPropOdds(
+                                player_name=player_name,
+                                prop_type=market_key,
+                                outcome=outcome_name,
+                                line=line,
+                                price=price,
+                                book=book_key,
+                            )
+                        )
+
+        return props
 
     def _normalize_sport(self, sport: str) -> str:
         """Normalize sport identifier to readable format."""

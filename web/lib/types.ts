@@ -59,6 +59,20 @@ export interface LineMovement {
   lastUpdated: string;
 }
 
+export interface PlayerProp {
+  eventId: string;
+  playerName: string;
+  propType: string;
+  line: number;
+  books: PlayerPropBook[];
+}
+
+export interface PlayerPropBook {
+  book: string;
+  overPrice: number;
+  underPrice: number;
+}
+
 // Unified feed item types
 import type { NewsItem } from "./news";
 import type { GameWeather } from "./weather";

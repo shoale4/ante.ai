@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from ante_ai.models import EventOdds, LatestOddsRow, OddsRow
+from ante_ai.models import EventOdds, LatestOddsRow, OddsRow, PlayerPropOdds, PlayerPropRow
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +17,25 @@ logger = logging.getLogger(__name__)
 class OddsStorage:
     """Manages storage of odds history and latest snapshots."""
 
-    def __init__(self, history_path: str, latest_path: str):
+    def __init__(
+        self,
+        history_path: str,
+        latest_path: str,
+        props_history_path: Optional[str] = None,
+        props_latest_path: Optional[str] = None,
+    ):
         self.history_path = Path(history_path)
         self.latest_path = Path(latest_path)
+        self.props_history_path = Path(props_history_path) if props_history_path else None
+        self.props_latest_path = Path(props_latest_path) if props_latest_path else None
 
         # Ensure directories exist
         self.history_path.parent.mkdir(parents=True, exist_ok=True)
         self.latest_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.props_history_path:
+            self.props_history_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.props_latest_path:
+            self.props_latest_path.parent.mkdir(parents=True, exist_ok=True)
 
     def flatten_events(
         self, events: List[EventOdds], timestamp: Optional[datetime] = None
@@ -173,3 +185,114 @@ class OddsStorage:
             return float(value)
         except ValueError:
             return None
+
+    def flatten_player_props(
+        self,
+        props: List[PlayerPropOdds],
+        event: EventOdds,
+        timestamp: Optional[datetime] = None,
+    ) -> List[PlayerPropRow]:
+        """Flatten PlayerPropOdds objects into PlayerPropRow records."""
+        if timestamp is None:
+            timestamp = datetime.now(timezone.utc)
+
+        timestamp_str = timestamp.isoformat()
+        start_time_str = event.start_time.isoformat() if event.start_time else None
+        rows: List[PlayerPropRow] = []
+
+        for prop in props:
+            row = PlayerPropRow(
+                timestamp_utc=timestamp_str,
+                book=prop.book,
+                sport=event.sport,
+                event_id=event.event_id,
+                event_start_time=start_time_str,
+                home_team=event.home_team,
+                away_team=event.away_team,
+                player_name=prop.player_name,
+                prop_type=prop.prop_type,
+                outcome=prop.outcome,
+                line=prop.line,
+                price=prop.price,
+            )
+            rows.append(row)
+
+        return rows
+
+    def append_props_to_history(self, rows: List[PlayerPropRow]) -> int:
+        """Append player prop rows to the props history CSV file.
+
+        Returns the number of rows appended.
+        """
+        if not rows or not self.props_history_path:
+            return 0
+
+        file_exists = self.props_history_path.exists()
+
+        with open(self.props_history_path, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=PlayerPropRow.fieldnames())
+            if not file_exists:
+                writer.writeheader()
+            for row in rows:
+                writer.writerow(row.to_dict())
+
+        logger.info(f"Appended {len(rows)} prop rows to {self.props_history_path}")
+        return len(rows)
+
+    def load_props_history(self) -> List[dict]:
+        """Load all player props history records from CSV."""
+        if not self.props_history_path or not self.props_history_path.exists():
+            return []
+
+        with open(self.props_history_path, "r", newline="") as f:
+            reader = csv.DictReader(f)
+            return list(reader)
+
+    def generate_props_latest(self) -> int:
+        """Generate the props_latest.csv snapshot.
+
+        Returns the number of rows written.
+        """
+        if not self.props_latest_path:
+            return 0
+
+        history = self.load_props_history()
+        if not history:
+            logger.info("No props history data available for latest snapshot")
+            return 0
+
+        # Group by unique key: (book, event_id, player_name, prop_type, outcome)
+        grouped: Dict[Tuple, List[dict]] = defaultdict(list)
+        for record in history:
+            key = (
+                record["book"],
+                record["event_id"],
+                record["player_name"],
+                record["prop_type"],
+                record["outcome"],
+            )
+            grouped[key].append(record)
+
+        # Get latest record for each unique key
+        latest_rows: List[dict] = []
+
+        for key, records in grouped.items():
+            # Sort by timestamp to find current
+            sorted_records = sorted(records, key=lambda r: r["timestamp_utc"])
+            last = sorted_records[-1]
+            latest_rows.append(last)
+
+        # Sort for consistent output
+        latest_rows.sort(
+            key=lambda r: (r["sport"], r["event_id"], r["player_name"], r["prop_type"])
+        )
+
+        # Write props_latest.csv (overwrite)
+        with open(self.props_latest_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=PlayerPropRow.fieldnames())
+            writer.writeheader()
+            for row in latest_rows:
+                writer.writerow(row)
+
+        logger.info(f"Generated {len(latest_rows)} prop rows in {self.props_latest_path}")
+        return len(latest_rows)

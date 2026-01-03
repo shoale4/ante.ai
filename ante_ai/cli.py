@@ -38,7 +38,7 @@ def load_config(config_path: str) -> dict:
         return json.load(f)
 
 
-def create_provider(config: dict) -> OddsProvider:
+def create_provider(config: dict) -> ExampleProvider:
     """Create an odds provider based on config."""
     provider_config = config.get("provider", {})
     provider_type = provider_config.get("type", "example")
@@ -50,12 +50,13 @@ def create_provider(config: dict) -> OddsProvider:
             regions=provider_config.get("regions", ["us"]),
             books=provider_config.get("books", ["example_book"]),
             raw_directory=config.get("storage", {}).get("raw_directory"),
+            player_prop_markets=provider_config.get("player_prop_markets", []),
         )
     else:
         raise ValueError(f"Unknown provider type: {provider_type}")
 
 
-def run_update(config: dict) -> None:
+def run_update(config: dict, fetch_props: bool = False) -> None:
     """Run a single update cycle: fetch, store, generate latest."""
     # Create provider
     provider = create_provider(config)
@@ -82,6 +83,8 @@ def run_update(config: dict) -> None:
     storage = OddsStorage(
         history_path=storage_config.get("history_path", "data/history/odds_history.csv"),
         latest_path=storage_config.get("latest_path", "data/latest/latest.csv"),
+        props_history_path=storage_config.get("props_history_path"),
+        props_latest_path=storage_config.get("props_latest_path"),
     )
 
     # Flatten events into rows
@@ -94,6 +97,31 @@ def run_update(config: dict) -> None:
 
     # Generate latest snapshot
     storage.generate_latest()
+
+    # Optionally fetch player props
+    if fetch_props and provider.player_prop_markets:
+        logger.info("Fetching player props...")
+        all_prop_rows = []
+        sport_mapping = {event.event_id: next(
+            (s for s in sports if provider._normalize_sport(s) == event.sport),
+            None
+        ) for event in events}
+
+        for event in events:
+            original_sport = sport_mapping.get(event.event_id)
+            if not original_sport:
+                continue
+
+            props = provider.fetch_player_props(original_sport, event.event_id)
+            if props:
+                prop_rows = storage.flatten_player_props(props, event, timestamp=timestamp)
+                all_prop_rows.extend(prop_rows)
+                logger.info(f"Fetched {len(props)} props for {event.home_team} vs {event.away_team}")
+
+        if all_prop_rows:
+            storage.append_props_to_history(all_prop_rows)
+            storage.generate_props_latest()
+            logger.info(f"Stored {len(all_prop_rows)} total prop rows")
 
     logger.info("Update complete!")
 
@@ -116,6 +144,11 @@ def main() -> int:
         action="store_true",
         help="Enable verbose logging",
     )
+    parser.add_argument(
+        "--props",
+        action="store_true",
+        help="Also fetch player props (requires additional API calls)",
+    )
 
     args = parser.parse_args()
 
@@ -125,7 +158,7 @@ def main() -> int:
         logger.info(f"Loading config from {args.config}")
         config = load_config(args.config)
 
-        run_update(config)
+        run_update(config, fetch_props=args.props)
         return 0
 
     except FileNotFoundError as e:

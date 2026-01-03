@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GameOdds } from "@/lib/types";
+import { LineMovementChart } from "./LineMovementChart";
+import { PlayerPropsSection } from "./PlayerPropsSection";
 
 interface Props {
   game: GameOdds;
@@ -9,7 +11,19 @@ interface Props {
   onClose: () => void;
 }
 
+type TabType = "odds" | "spread" | "moneyline" | "total" | "props";
+
+const tabs: { id: TabType; label: string }[] = [
+  { id: "odds", label: "All Odds" },
+  { id: "spread", label: "Spread" },
+  { id: "moneyline", label: "Moneyline" },
+  { id: "total", label: "Total" },
+  { id: "props", label: "Props" },
+];
+
 export function GameDetailModal({ game, isOpen, onClose }: Props) {
+  const [activeTab, setActiveTab] = useState<TabType>("odds");
+
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -45,65 +59,157 @@ export function GameDetailModal({ game, isOpen, onClose }: Props) {
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-gray-200/60 px-6 py-4 flex items-center justify-between">
-          <div>
-            <div className="text-sm text-[--text-secondary]">{game.sport}</div>
-            <h2 className="text-xl font-semibold">
-              {game.awayTeam} @ {game.homeTeam}
-            </h2>
-            <div className="text-sm text-[--text-secondary]">
-              {gameTime.toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}{" "}
-              at{" "}
-              {gameTime.toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-              })}
+        <div className="sticky top-0 bg-[#f5f5f7]/80 backdrop-blur-xl border-b border-gray-200/60 px-6 py-4 z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-[--text-secondary]">{game.sport}</div>
+              <h2 className="text-xl font-semibold">
+                {game.awayTeam} @ {game.homeTeam}
+              </h2>
+              <div className="text-sm text-[--text-secondary]">
+                {gameTime.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}{" "}
+                at{" "}
+                {gameTime.toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+
+          {/* Tabs */}
+          <div className="flex gap-1 mt-4 overflow-x-auto pb-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200/80 text-gray-600 hover:bg-gray-300"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Moneyline */}
-          <MarketSection
-            title="Moneyline"
-            description="Pick the winner"
-            homeTeam={game.homeTeam}
-            awayTeam={game.awayTeam}
-            homeOdds={game.markets.moneyline.filter(o => o.outcome === "home")}
-            awayOdds={game.markets.moneyline.filter(o => o.outcome === "away")}
-          />
+          {activeTab === "odds" && (
+            <>
+              {/* Moneyline */}
+              <MarketSection
+                title="Moneyline"
+                description="Pick the winner"
+                homeTeam={game.homeTeam}
+                awayTeam={game.awayTeam}
+                homeOdds={game.markets.moneyline.filter(o => o.outcome === "home")}
+                awayOdds={game.markets.moneyline.filter(o => o.outcome === "away")}
+              />
 
-          {/* Spread */}
-          <MarketSection
-            title="Spread"
-            description="Point spread betting"
-            homeTeam={game.homeTeam}
-            awayTeam={game.awayTeam}
-            homeOdds={game.markets.spread.filter(o => o.outcome === "home")}
-            awayOdds={game.markets.spread.filter(o => o.outcome === "away")}
-            showLine
-          />
+              {/* Spread */}
+              <MarketSection
+                title="Spread"
+                description="Point spread betting"
+                homeTeam={game.homeTeam}
+                awayTeam={game.awayTeam}
+                homeOdds={game.markets.spread.filter(o => o.outcome === "home")}
+                awayOdds={game.markets.spread.filter(o => o.outcome === "away")}
+                showLine
+              />
 
-          {/* Total */}
-          <TotalSection
-            title="Total"
-            description="Over/Under points"
-            overOdds={game.markets.total.filter(o => o.outcome === "over")}
-            underOdds={game.markets.total.filter(o => o.outcome === "under")}
-          />
+              {/* Total */}
+              <TotalSection
+                title="Total"
+                description="Over/Under points"
+                overOdds={game.markets.total.filter(o => o.outcome === "over")}
+                underOdds={game.markets.total.filter(o => o.outcome === "under")}
+              />
+            </>
+          )}
+
+          {activeTab === "spread" && (
+            <>
+              <MarketSection
+                title="Spread"
+                description="Point spread betting"
+                homeTeam={game.homeTeam}
+                awayTeam={game.awayTeam}
+                homeOdds={game.markets.spread.filter(o => o.outcome === "home")}
+                awayOdds={game.markets.spread.filter(o => o.outcome === "away")}
+                showLine
+              />
+              <div className="glass-card p-5">
+                <h3 className="font-semibold text-lg mb-3">Line Movement</h3>
+                <LineMovementChart
+                  eventId={game.eventId}
+                  marketType="spread"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                />
+              </div>
+            </>
+          )}
+
+          {activeTab === "moneyline" && (
+            <>
+              <MarketSection
+                title="Moneyline"
+                description="Pick the winner"
+                homeTeam={game.homeTeam}
+                awayTeam={game.awayTeam}
+                homeOdds={game.markets.moneyline.filter(o => o.outcome === "home")}
+                awayOdds={game.markets.moneyline.filter(o => o.outcome === "away")}
+              />
+              <div className="glass-card p-5">
+                <h3 className="font-semibold text-lg mb-3">Line Movement</h3>
+                <LineMovementChart
+                  eventId={game.eventId}
+                  marketType="moneyline"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                />
+              </div>
+            </>
+          )}
+
+          {activeTab === "total" && (
+            <>
+              <TotalSection
+                title="Total"
+                description="Over/Under points"
+                overOdds={game.markets.total.filter(o => o.outcome === "over")}
+                underOdds={game.markets.total.filter(o => o.outcome === "under")}
+              />
+              <div className="glass-card p-5">
+                <h3 className="font-semibold text-lg mb-3">Line Movement</h3>
+                <LineMovementChart
+                  eventId={game.eventId}
+                  marketType="total"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                />
+              </div>
+            </>
+          )}
+
+          {activeTab === "props" && (
+            <PlayerPropsSection eventId={game.eventId} />
+          )}
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ class EventOdds:
     home_team: str
     away_team: str
     markets: List[MarketOdds] = field(default_factory=list)
+    player_props: List["PlayerPropOdds"] = field(default_factory=list)
     start_time: Optional[datetime] = None
 
 
@@ -84,6 +85,71 @@ class OddsRow:
             "outcome",
             "price",
             "line",
+        ]
+
+
+@dataclass
+class PlayerPropOdds:
+    """Represents a player prop betting outcome."""
+
+    player_name: str
+    prop_type: str  # e.g., "player_points", "player_pass_yds"
+    outcome: Literal["over", "under"]
+    line: float
+    price: int
+    book: str = ""
+
+
+@dataclass
+class PlayerPropRow:
+    """A flattened row representing a single player prop snapshot."""
+
+    timestamp_utc: str
+    book: str
+    sport: str
+    event_id: str
+    event_start_time: Optional[str]
+    home_team: str
+    away_team: str
+    player_name: str
+    prop_type: str
+    outcome: str
+    line: float
+    price: int
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for CSV writing."""
+        return {
+            "timestamp_utc": self.timestamp_utc,
+            "book": self.book,
+            "sport": self.sport,
+            "event_id": self.event_id,
+            "event_start_time": self.event_start_time or "",
+            "home_team": self.home_team,
+            "away_team": self.away_team,
+            "player_name": self.player_name,
+            "prop_type": self.prop_type,
+            "outcome": self.outcome,
+            "line": self.line,
+            "price": self.price,
+        }
+
+    @classmethod
+    def fieldnames(cls) -> List[str]:
+        """Return CSV field names."""
+        return [
+            "timestamp_utc",
+            "book",
+            "sport",
+            "event_id",
+            "event_start_time",
+            "home_team",
+            "away_team",
+            "player_name",
+            "prop_type",
+            "outcome",
+            "line",
+            "price",
         ]
 
 
