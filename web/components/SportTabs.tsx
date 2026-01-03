@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { GameOdds } from "@/lib/types";
 import { GameCard } from "./GameCard";
+import { GameWeather } from "@/lib/weather";
 
 interface Props {
   nflGames: GameOdds[];
   nbaGames: GameOdds[];
+  weatherData: Record<string, GameWeather>;
 }
 
 type Sport = "NBA" | "NFL";
 
-export function SportTabs({ nflGames, nbaGames }: Props) {
+export function SportTabs({ nflGames, nbaGames, weatherData }: Props) {
   const [activeSport, setActiveSport] = useState<Sport>(
     nbaGames.length > 0 ? "NBA" : "NFL"
   );
@@ -67,7 +69,12 @@ export function SportTabs({ nflGames, nbaGames }: Props) {
       {games.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {games.map((game, index) => (
-            <GameCard key={game.eventId} game={game} colorIndex={index} />
+            <GameCard
+              key={game.eventId}
+              game={game}
+              colorIndex={index}
+              weather={activeSport === "NFL" ? weatherData[game.homeTeam] : undefined}
+            />
           ))}
         </div>
       ) : (

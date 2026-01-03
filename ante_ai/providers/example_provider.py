@@ -189,8 +189,17 @@ class ExampleProvider(OddsProvider):
         mapping = {
             "americanfootball_nfl": "NFL",
             "basketball_nba": "NBA",
+            "baseball_mlb": "MLB",
+            "icehockey_nhl": "NHL",
             "americanfootball_ncaaf": "NCAAF",
             "basketball_ncaab": "NCAAB",
+            "mma_mixed_martial_arts": "MMA",
+            "soccer_epl": "Soccer",
+            "soccer_spain_la_liga": "Soccer",
+            "soccer_uefa_champs_league": "Soccer",
+            "soccer_germany_bundesliga": "Soccer",
+            "soccer_italy_serie_a": "Soccer",
+            "soccer_france_ligue_one": "Soccer",
         }
         return mapping.get(sport, sport.upper())
 
@@ -206,6 +215,14 @@ class ExampleProvider(OddsProvider):
                 events.extend(self._create_nfl_stub_events(now))
             elif "nba" in sport.lower():
                 events.extend(self._create_nba_stub_events(now))
+            elif "mlb" in sport.lower():
+                events.extend(self._create_mlb_stub_events(now))
+            elif "nhl" in sport.lower():
+                events.extend(self._create_nhl_stub_events(now))
+            elif "mma" in sport.lower():
+                events.extend(self._create_mma_stub_events(now))
+            elif "soccer" in sport.lower():
+                events.extend(self._create_soccer_stub_events(now, sport))
 
         return events
 
@@ -345,6 +362,266 @@ class ExampleProvider(OddsProvider):
                         outcomes=[
                             OutcomeOdds(outcome="over", price=-105, line=232.0),
                             OutcomeOdds(outcome="under", price=-115, line=232.0),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+
+    def _create_mlb_stub_events(self, now: datetime) -> List[EventOdds]:
+        """Create stub MLB events."""
+        return [
+            EventOdds(
+                event_id="mlb_stub_001",
+                sport="MLB",
+                home_team="New York Yankees",
+                away_team="Boston Red Sox",
+                start_time=now + timedelta(days=1),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-145),
+                            OutcomeOdds(outcome="away", price=125),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-115, line=-1.5),
+                            OutcomeOdds(outcome="away", price=-105, line=1.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-110, line=8.5),
+                            OutcomeOdds(outcome="under", price=-110, line=8.5),
+                        ],
+                    ),
+                ],
+            ),
+            EventOdds(
+                event_id="mlb_stub_002",
+                sport="MLB",
+                home_team="Los Angeles Dodgers",
+                away_team="San Francisco Giants",
+                start_time=now + timedelta(days=1, hours=3),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-180),
+                            OutcomeOdds(outcome="away", price=155),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=105, line=-1.5),
+                            OutcomeOdds(outcome="away", price=-125, line=1.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-108, line=7.5),
+                            OutcomeOdds(outcome="under", price=-112, line=7.5),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+
+    def _create_nhl_stub_events(self, now: datetime) -> List[EventOdds]:
+        """Create stub NHL events."""
+        return [
+            EventOdds(
+                event_id="nhl_stub_001",
+                sport="NHL",
+                home_team="Toronto Maple Leafs",
+                away_team="Montreal Canadiens",
+                start_time=now + timedelta(days=1),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-155),
+                            OutcomeOdds(outcome="away", price=135),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-115, line=-1.5),
+                            OutcomeOdds(outcome="away", price=-105, line=1.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-110, line=6.5),
+                            OutcomeOdds(outcome="under", price=-110, line=6.5),
+                        ],
+                    ),
+                ],
+            ),
+            EventOdds(
+                event_id="nhl_stub_002",
+                sport="NHL",
+                home_team="Vegas Golden Knights",
+                away_team="Colorado Avalanche",
+                start_time=now + timedelta(days=1, hours=3),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-130),
+                            OutcomeOdds(outcome="away", price=110),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=105, line=-1.5),
+                            OutcomeOdds(outcome="away", price=-125, line=1.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-105, line=5.5),
+                            OutcomeOdds(outcome="under", price=-115, line=5.5),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+
+    def _create_mma_stub_events(self, now: datetime) -> List[EventOdds]:
+        """Create stub MMA/UFC events."""
+        return [
+            EventOdds(
+                event_id="mma_stub_001",
+                sport="MMA",
+                home_team="Jon Jones",
+                away_team="Stipe Miocic",
+                start_time=now + timedelta(days=7),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-250),
+                            OutcomeOdds(outcome="away", price=210),
+                        ],
+                    ),
+                ],
+            ),
+            EventOdds(
+                event_id="mma_stub_002",
+                sport="MMA",
+                home_team="Islam Makhachev",
+                away_team="Charles Oliveira",
+                start_time=now + timedelta(days=7, hours=2),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-180),
+                            OutcomeOdds(outcome="away", price=155),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+
+    def _create_soccer_stub_events(self, now: datetime, sport: str) -> List[EventOdds]:
+        """Create stub soccer events."""
+        # Determine league name from sport key
+        league_names = {
+            "soccer_epl": "EPL",
+            "soccer_spain_la_liga": "La Liga",
+            "soccer_uefa_champs_league": "UCL",
+        }
+        # All normalize to "Soccer" for display
+
+        return [
+            EventOdds(
+                event_id="soccer_stub_001",
+                sport="Soccer",
+                home_team="Manchester City",
+                away_team="Liverpool",
+                start_time=now + timedelta(days=3),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=120),
+                            OutcomeOdds(outcome="away", price=180),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-110, line=-0.5),
+                            OutcomeOdds(outcome="away", price=-110, line=0.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-105, line=2.5),
+                            OutcomeOdds(outcome="under", price=-115, line=2.5),
+                        ],
+                    ),
+                ],
+            ),
+            EventOdds(
+                event_id="soccer_stub_002",
+                sport="Soccer",
+                home_team="Real Madrid",
+                away_team="Barcelona",
+                start_time=now + timedelta(days=5),
+                markets=[
+                    MarketOdds(
+                        market_type="moneyline",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=110),
+                            OutcomeOdds(outcome="away", price=165),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="spread",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="home", price=-108, line=-0.5),
+                            OutcomeOdds(outcome="away", price=-112, line=0.5),
+                        ],
+                    ),
+                    MarketOdds(
+                        market_type="total",
+                        book="fanduel",
+                        outcomes=[
+                            OutcomeOdds(outcome="over", price=-110, line=3.0),
+                            OutcomeOdds(outcome="under", price=-110, line=3.0),
                         ],
                     ),
                 ],

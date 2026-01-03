@@ -17,6 +17,10 @@
   --nba-secondary: #17408b;
   --nfl-primary: #013369;
   --nfl-secondary: #d50a0a;
+  --mlb-primary: #002d72;
+  --mlb-secondary: #d50032;
+  --nhl-primary: #000000;
+  --nhl-secondary: #a2aaad;
 }
 
 @theme inline {
@@ -108,6 +112,14 @@ body {
   background: linear-gradient(135deg, #013369 0%, #d50a0a 100%);
 }
 
+.gradient-mlb {
+  background: linear-gradient(135deg, #002d72 0%, #d50032 100%);
+}
+
+.gradient-nhl {
+  background: linear-gradient(135deg, #000000 0%, #a2aaad 100%);
+}
+
 .gradient-green {
   background: linear-gradient(135deg, #30d158 0%, #00c7be 100%);
 }
@@ -194,4 +206,83 @@ body {
 
 .tab-inactive:hover {
   background: #f9f9f9;
+}
+
+/* Filter chips */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: white;
+  color: #636366;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-chip:hover {
+  background: #f5f5f7;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.filter-chip-active {
+  background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filter-chip-active:hover {
+  background: linear-gradient(135deg, #2c2c2e 0%, #3c3c3e 100%);
+}
+
+.filter-chip-nba {
+  background: linear-gradient(135deg, #c9082a 0%, #17408b 100%);
+}
+
+.filter-chip-nba:hover {
+  background: linear-gradient(135deg, #d9183a 0%, #27509b 100%);
+}
+
+.filter-chip-nfl {
+  background: linear-gradient(135deg, #013369 0%, #1a4379 100%);
+}
+
+.filter-chip-nfl:hover {
+  background: linear-gradient(135deg, #114379 0%, #2a5389 100%);
+}
+
+.filter-chip-mlb {
+  background: linear-gradient(135deg, #002d72 0%, #d50032 100%);
+}
+
+.filter-chip-mlb:hover {
+  background: linear-gradient(135deg, #103d82 0%, #e51042 100%);
+}
+
+.filter-chip-nhl {
+  background: linear-gradient(135deg, #000000 0%, #a2aaad 100%);
+}
+
+.filter-chip-nhl:hover {
+  background: linear-gradient(135deg, #1a1a1a 0%, #b2babd 100%);
+}
+
+.filter-chip-mma {
+  background: linear-gradient(135deg, #d20a0a 0%, #1a1a1a 100%);
+}
+
+.filter-chip-mma:hover {
+  background: linear-gradient(135deg, #e21a1a 0%, #2a2a2a 100%);
+}
+
+.filter-chip-soccer {
+  background: linear-gradient(135deg, #1e6e3e 0%, #2d9d5a 100%);
+}
+
+.filter-chip-soccer:hover {
+  background: linear-gradient(135deg, #2e7e4e 0%, #3dad6a 100%);
 }

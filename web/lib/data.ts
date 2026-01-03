@@ -105,8 +105,18 @@ export async function getGameOdds(): Promise<GameOdds[]> {
     game.markets[snapshot.marketType].push(bookOdds);
   }
 
+  // Filter to only today's games and future games (exclude past games)
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const filteredGames = Array.from(gamesMap.values()).filter((game) => {
+    const gameTime = new Date(game.eventStartTime);
+    // Show games from today onwards (game start time >= start of today)
+    return gameTime >= todayStart;
+  });
+
   // Sort by event start time
-  return Array.from(gamesMap.values()).sort(
+  return filteredGames.sort(
     (a, b) =>
       new Date(a.eventStartTime).getTime() -
       new Date(b.eventStartTime).getTime()

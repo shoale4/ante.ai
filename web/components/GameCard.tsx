@@ -4,13 +4,16 @@ import { useState } from "react";
 import { GameOdds } from "@/lib/types";
 import { GameDetailModal } from "./GameDetailModal";
 import { TeamLogo } from "./TeamLogo";
+import { WeatherBadge } from "./WeatherBadge";
+import { GameWeather } from "@/lib/weather";
 
 interface Props {
   game: GameOdds;
   colorIndex?: number;
+  weather?: GameWeather;
 }
 
-export function GameCard({ game, colorIndex = 0 }: Props) {
+export function GameCard({ game, colorIndex = 0, weather }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const gameTime = new Date(game.eventStartTime);
@@ -55,6 +58,7 @@ export function GameCard({ game, colorIndex = 0 }: Props) {
             <span className="text-sm font-medium text-[--text-secondary]">{game.sport}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
+            {weather && <WeatherBadge weather={weather} />}
             <span className={`
               px-2 py-1 rounded-lg text-xs font-semibold
               ${isToday ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}
