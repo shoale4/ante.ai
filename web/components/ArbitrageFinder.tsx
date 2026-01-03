@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 
@@ -18,9 +18,29 @@ interface Props {
 }
 
 export function ArbitrageFinder({ games }: Props) {
-  const opportunities = useMemo(() => findAllArbitrage(games), [games]);
+  const allOpportunities = useMemo(() => {
+    const opps = findAllArbitrage(games);
+    // Sort by profit descending
+    return opps.sort((a, b) => b.profit - a.profit);
+  }, [games]);
 
-  if (opportunities.length === 0) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<Sport | "all">("all");
+
+  // Get unique sports from opportunities
+  const availableSports = useMemo(() => {
+    const sports = new Set(allOpportunities.map(o => o.sport as Sport));
+    return Array.from(sports).sort();
+  }, [allOpportunities]);
+
+  // Filter by selected sport
+  const opportunities = useMemo(() => {
+    if (selectedSport === "all") return allOpportunities;
+    return allOpportunities.filter(o => o.sport === selectedSport);
+  }, [allOpportunities, selectedSport]);
+
+  if (allOpportunities.length === 0) {
     return (
       <div className="glass-card p-6 text-center">
         <div className="text-4xl mb-3">🔍</div>
@@ -32,102 +52,168 @@ export function ArbitrageFinder({ games }: Props) {
     );
   }
 
+  // Show only top 10 by default
+  const displayedOpps = showAll ? opportunities : opportunities.slice(0, 10);
+  const hasMore = opportunities.length > 10;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">💰</span>
+          <span className="text-xl">💰</span>
           <div>
-            <h3 className="font-bold">Arbitrage Opportunities</h3>
+            <h3 className="font-bold text-sm">Arbitrage Opportunities</h3>
             <p className="text-xs text-[--text-secondary]">
-              Guaranteed profit by betting both sides
+              Click row for details
             </p>
           </div>
         </div>
-        <span className="pill pill-green">{opportunities.length} found</span>
+        <span className="pill pill-green text-xs">{opportunities.length} found</span>
       </div>
 
-      <div className="space-y-3">
-        {opportunities.map((opp, idx) => (
-          <ArbitrageCard key={`${opp.gameId}-${opp.market}-${idx}`} opportunity={opp} />
-        ))}
+      {/* Sport Filter */}
+      {availableSports.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedSport("all")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              selectedSport === "all"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            All ({allOpportunities.length})
+          </button>
+          {availableSports.map((sport) => {
+            const count = allOpportunities.filter(o => o.sport === sport).length;
+            return (
+              <button
+                key={sport}
+                onClick={() => setSelectedSport(sport)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                  selectedSport === sport
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <span>{SPORT_EMOJI[sport]}</span>
+                <span>{sport} ({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Compact Table */}
+      <div className="glass-card overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 text-xs text-[--text-secondary]">
+              <th className="text-left py-2 px-3 font-medium">Game</th>
+              <th className="text-left py-2 px-2 font-medium">Type</th>
+              <th className="text-right py-2 px-2 font-medium">Profit</th>
+              <th className="text-right py-2 px-3 font-medium">Books</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {displayedOpps.map((opp, idx) => {
+              const id = `${opp.gameId}-${opp.market}-${idx}`;
+              const isExpanded = expandedId === id;
+              return (
+                <CompactArbitrageRow
+                  key={id}
+                  opportunity={opp}
+                  isExpanded={isExpanded}
+                  onToggle={() => setExpandedId(isExpanded ? null : id)}
+                />
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+
+      {/* Show More/Less */}
+      {hasMore && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="w-full py-2 text-xs font-medium text-[--accent] hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          {showAll ? `Show less` : `Show ${opportunities.length - 10} more`}
+        </button>
+      )}
     </div>
   );
 }
 
-function ArbitrageCard({ opportunity }: { opportunity: ArbitrageOpportunity }) {
-  const profitColor =
-    opportunity.profit >= 3
-      ? "text-green-600 bg-green-100"
-      : opportunity.profit >= 1
-      ? "text-yellow-600 bg-yellow-100"
-      : "text-blue-600 bg-blue-100";
+function CompactArbitrageRow({
+  opportunity,
+  isExpanded,
+  onToggle
+}: {
+  opportunity: ArbitrageOpportunity;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const books = opportunity.legs.map(l => l.book).join(" / ");
 
   return (
-    <div className="glass-card p-4 border-l-4 border-green-500">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
-          <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-            +{opportunity.profit.toFixed(2)}% PROFIT
-          </span>
-          <span className="text-xs text-[--text-secondary] capitalize">
-            {opportunity.market}
-          </span>
-        </div>
-        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${profitColor}`}>
-          ${((opportunity.profit / 100) * opportunity.totalStake).toFixed(2)} guaranteed
-        </span>
-      </div>
-
-      {/* Game Info */}
-      <div className="text-sm font-semibold mb-3">
-        {opportunity.awayTeam} @ {opportunity.homeTeam}
-      </div>
-
-      {/* Legs */}
-      <div className="space-y-2">
-        {opportunity.legs.map((leg, idx) => (
-          <div
-            key={idx}
-            className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-gray-500">#{idx + 1}</span>
-              <div>
-                <div className="font-medium text-sm">{leg.side}</div>
-                <div className="text-xs text-[--text-secondary]">@ {leg.book}</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div
-                className={`font-bold text-sm ${
-                  leg.odds > 0 ? "text-green-600" : ""
-                }`}
-              >
-                {leg.odds > 0 ? "+" : ""}
-                {leg.odds}
-              </div>
-              <div className="text-xs text-[--text-secondary]">
-                Bet ${leg.stake.toFixed(2)}
-              </div>
-            </div>
+    <>
+      <tr
+        className="hover:bg-gray-50 cursor-pointer transition-colors"
+        onClick={onToggle}
+      >
+        <td className="py-2 px-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
+            <span className="font-medium truncate max-w-[140px]" title={`${opportunity.awayTeam} @ ${opportunity.homeTeam}`}>
+              {opportunity.awayTeam.split(" ").pop()} @ {opportunity.homeTeam.split(" ").pop()}
+            </span>
           </div>
-        ))}
-      </div>
-
-      {/* Summary */}
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-        <span className="text-[--text-secondary]">
-          Total stake: ${opportunity.totalStake.toFixed(2)}
-        </span>
-        <span className="font-semibold text-green-600">
-          Guaranteed payout: ${opportunity.legs[0].payout.toFixed(2)}
-        </span>
-      </div>
-    </div>
+        </td>
+        <td className="py-2 px-2 capitalize text-xs text-[--text-secondary]">
+          {opportunity.market}
+        </td>
+        <td className="py-2 px-2 text-right">
+          <span className="font-bold text-green-600">+{opportunity.profit.toFixed(2)}%</span>
+        </td>
+        <td className="py-2 px-3 text-right">
+          <span className="text-xs text-[--text-secondary] capitalize">{books}</span>
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr>
+          <td colSpan={4} className="bg-gray-50 px-3 py-3">
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-[--text-secondary]">
+                {opportunity.awayTeam} @ {opportunity.homeTeam}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {opportunity.legs.map((leg, idx) => (
+                  <div key={idx} className="bg-white rounded-lg p-2 border border-gray-100">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-medium">{leg.side}</span>
+                      <span className={`text-sm font-bold ${leg.odds > 0 ? "text-green-600" : ""}`}>
+                        {leg.odds > 0 ? "+" : ""}{leg.odds}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1 text-xs text-[--text-secondary]">
+                      <span className="capitalize">{leg.book}</span>
+                      <span>Bet ${leg.stake.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-200 text-xs">
+                <span className="text-[--text-secondary]">Total: ${opportunity.totalStake.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">
+                  Profit: ${((opportunity.profit / 100) * opportunity.totalStake).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
