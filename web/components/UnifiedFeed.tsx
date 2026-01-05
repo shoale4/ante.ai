@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { GameOdds, LineMovement } from "@/lib/types";
+import { GameOdds, LineMovement, Sport } from "@/lib/types";
 import { NewsItem } from "@/lib/news";
 import { GameWeather } from "@/lib/weather";
 import { GameFeedCard, MovementFeedCard, NewsFeedCard } from "./feed";
@@ -156,90 +156,63 @@ export function UnifiedFeed({ games, movements, news, weatherData }: Props) {
   return (
     <div>
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        {/* Sport Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setSportFilter("all")}
-            className={`filter-chip ${sportFilter === "all" ? "filter-chip-active" : ""}`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setSportFilter("nfl")}
-            className={`filter-chip ${sportFilter === "nfl" ? "filter-chip-active filter-chip-nfl" : ""}`}
-          >
-            <span className="mr-1">🏈</span>
-            NFL
-          </button>
-          <button
-            onClick={() => setSportFilter("nba")}
-            className={`filter-chip ${sportFilter === "nba" ? "filter-chip-active filter-chip-nba" : ""}`}
-          >
-            <span className="mr-1">🏀</span>
-            NBA
-          </button>
-          <button
-            onClick={() => setSportFilter("mlb")}
-            className={`filter-chip ${sportFilter === "mlb" ? "filter-chip-active filter-chip-mlb" : ""}`}
-          >
-            <span className="mr-1">⚾</span>
-            MLB
-          </button>
-          <button
-            onClick={() => setSportFilter("nhl")}
-            className={`filter-chip ${sportFilter === "nhl" ? "filter-chip-active filter-chip-nhl" : ""}`}
-          >
-            <span className="mr-1">🏒</span>
-            NHL
-          </button>
-          <button
-            onClick={() => setSportFilter("mma")}
-            className={`filter-chip ${sportFilter === "mma" ? "filter-chip-active filter-chip-mma" : ""}`}
-          >
-            <span className="mr-1">🥊</span>
-            MMA
-          </button>
-          <button
-            onClick={() => setSportFilter("soccer")}
-            className={`filter-chip ${sportFilter === "soccer" ? "filter-chip-active filter-chip-soccer" : ""}`}
-          >
-            <span className="mr-1">⚽</span>
-            Soccer
-          </button>
+      <div className="space-y-3 mb-6">
+        {/* Sport Filters - horizontal scroll on mobile */}
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+          <div className="flex items-center gap-1.5 pb-1 sm:flex-wrap sm:pb-0">
+            {(["all", "nfl", "nba", "mlb", "nhl", "mma", "soccer"] as SportFilter[]).map((sport) => {
+              const isActive = sportFilter === sport;
+              const emoji = sport === "all" ? "🎯" : sport === "nfl" ? "🏈" : sport === "nba" ? "🏀" : sport === "mlb" ? "⚾" : sport === "nhl" ? "🏒" : sport === "mma" ? "🥊" : "⚽";
+              const label = sport === "all" ? "All" : sport.toUpperCase();
+
+              return (
+                <button
+                  key={sport}
+                  onClick={() => setSportFilter(sport)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all active:scale-95 flex items-center gap-1 ${
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="text-sm">{emoji}</span>
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="w-px h-6 bg-gray-200 hidden sm:block" />
-
         {/* Content Type Filters */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => toggleContentFilter("games")}
-            className={`filter-chip ${contentFilters.has("games") ? "filter-chip-active" : ""}`}
-          >
-            Games
-            <span className="ml-1.5 text-xs opacity-70">{counts.games}</span>
-          </button>
-          <button
-            onClick={() => toggleContentFilter("movements")}
-            className={`filter-chip ${contentFilters.has("movements") ? "filter-chip-active" : ""}`}
-          >
-            Movements
-            <span className="ml-1.5 text-xs opacity-70">{counts.movements}</span>
-          </button>
-          <button
-            onClick={() => toggleContentFilter("news")}
-            className={`filter-chip ${contentFilters.has("news") ? "filter-chip-active" : ""}`}
-          >
-            News
-            <span className="ml-1.5 text-xs opacity-70">{counts.news}</span>
-          </button>
+        <div className="flex items-center gap-1.5">
+          {(["games", "movements", "news"] as ContentFilter[]).map((filter) => {
+            const isActive = contentFilters.has(filter);
+            const count = counts[filter];
+            const label = filter === "games" ? "Games" : filter === "movements" ? "Moves" : "News";
+
+            return (
+              <button
+                key={filter}
+                onClick={() => toggleContentFilter(filter)}
+                className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all active:scale-95 flex items-center gap-1 ${
+                  isActive
+                    ? "bg-purple-50 text-purple-700 border border-purple-200"
+                    : "bg-gray-50 text-gray-400 border border-gray-100"
+                }`}
+              >
+                {label}
+                <span className={`text-[10px] px-1 py-0.5 rounded ${isActive ? "bg-purple-100" : "bg-gray-100"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Feed */}
       {hasContent ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Game Groups with related content */}
           {filteredGameGroups.map((group) => (
             <div key={group.game.eventId} className="space-y-2">
@@ -248,7 +221,7 @@ export function UnifiedFeed({ games, movements, news, weatherData }: Props) {
 
               {/* Related Movements */}
               {contentFilters.has("movements") && group.relatedMovements.length > 0 && (
-                <div className="ml-4 pl-4 border-l-2 border-purple-200 space-y-2">
+                <div className="ml-2 sm:ml-4 pl-3 sm:pl-4 border-l-2 border-purple-200 space-y-2">
                   {group.relatedMovements.slice(0, 3).map((movement, idx) => (
                     <MovementFeedCard key={`${movement.eventId}-${idx}`} movement={movement} />
                   ))}
@@ -257,7 +230,7 @@ export function UnifiedFeed({ games, movements, news, weatherData }: Props) {
 
               {/* Related News */}
               {contentFilters.has("news") && group.relatedNews.length > 0 && (
-                <div className="ml-4 pl-4 border-l-2 border-blue-200 space-y-2">
+                <div className="ml-2 sm:ml-4 pl-3 sm:pl-4 border-l-2 border-blue-200 space-y-2">
                   {group.relatedNews.slice(0, 3).map((newsItem) => (
                     <NewsFeedCard key={newsItem.id} news={newsItem} />
                   ))}
@@ -288,11 +261,11 @@ export function UnifiedFeed({ games, movements, news, weatherData }: Props) {
           )}
         </div>
       ) : (
-        <div className="glass-card p-12 text-center">
-          <div className="text-4xl mb-3">🔍</div>
-          <h3 className="text-lg font-semibold mb-1">No items to display</h3>
-          <p className="text-[--text-secondary]">
-            Try adjusting your filters to see more content.
+        <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
+          <div className="text-3xl mb-2">🔍</div>
+          <h3 className="text-[14px] font-semibold text-gray-900 mb-1">No items found</h3>
+          <p className="text-[12px] text-gray-500">
+            Try adjusting your filters
           </p>
         </div>
       )}

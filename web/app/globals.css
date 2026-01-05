@@ -36,6 +36,15 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safe area for notched phones */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Mobile bottom nav spacing */
+@media (max-width: 640px) {
+  main {
+    padding-bottom: 80px;
+  }
 }
 
 /* Glassmorphism card */
@@ -285,4 +294,72 @@ body {
 
 .filter-chip-soccer:hover {
   background: linear-gradient(135deg, #2e7e4e 0%, #3dad6a 100%);
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch feedback - iOS style */
+.touch-feedback {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.touch-feedback:active {
+  transform: scale(0.97);
+  opacity: 0.8;
+}
+
+/* Minimum touch target size (44x44px per Apple HIG) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Card tap animation */
+.card-tap {
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.2s ease;
+}
+
+.card-tap:active {
+  transform: scale(0.98);
+}
+
+/* Pull to refresh indicator style */
+.pull-indicator {
+  transition: transform 0.3s ease;
+}
+
+/* iOS-style list separator */
+.list-separator {
+  position: relative;
+}
+
+.list-separator::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Mobile-first responsive spacing */
+@media (max-width: 640px) {
+  .mobile-compact {
+    padding: 12px;
+  }
+
+  .mobile-full-bleed {
+    margin-left: -16px;
+    margin-right: -16px;
+    border-radius: 0;
+  }
 }

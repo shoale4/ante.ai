@@ -4,12 +4,16 @@ import { GameWeather } from "@/lib/weather";
 
 interface Props {
   weather: GameWeather | null;
+  compact?: boolean;
 }
 
-export function WeatherBadge({ weather }: Props) {
+export function WeatherBadge({ weather, compact }: Props) {
   if (!weather) return null;
 
   if (weather.isDome) {
+    if (compact) {
+      return <span className="text-[10px] text-gray-400">🏟️</span>;
+    }
     return (
       <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg text-xs">
         <span>🏟️</span>
@@ -19,10 +23,21 @@ export function WeatherBadge({ weather }: Props) {
   }
 
   // Determine badge color based on conditions
+  const hasHighAlert = weather.alerts.some((a) => a.severity === "high");
+  const hasMediumAlert = weather.alerts.some((a) => a.severity === "medium");
+
+  if (compact) {
+    return (
+      <span className={`text-[10px] ${hasHighAlert ? "text-red-500" : hasMediumAlert ? "text-orange-500" : "text-gray-400"}`}>
+        {weather.icon} {weather.temperature}°
+      </span>
+    );
+  }
+
   let bgClass = "bg-green-50 text-green-700";
-  if (weather.alerts.some((a) => a.severity === "high")) {
+  if (hasHighAlert) {
     bgClass = "bg-red-50 text-red-700";
-  } else if (weather.alerts.some((a) => a.severity === "medium")) {
+  } else if (hasMediumAlert) {
     bgClass = "bg-orange-50 text-orange-700";
   }
 
