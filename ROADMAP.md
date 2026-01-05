@@ -1,86 +1,117 @@
 # Ante AI Roadmap
 
-## Phase 1: Core Improvements (Current Sprint)
+## Completed Features
 - [x] Filter out yesterday's games (only show today + future)
-- [ ] Weather data for NFL games
-- [ ] Player news aggregation
-
-## Phase 2: Weather Integration (NFL)
-**Goal:** Show weather conditions that affect betting (wind, rain, snow, temperature)
-
-### Data Sources (Free):
-1. **Open-Meteo API** (free, no API key needed)
-   - Hourly forecasts
-   - Wind speed, precipitation, temperature
-
-### Implementation:
-- Create `weather.ts` service to fetch weather by stadium location
-- Map NFL teams to stadium coordinates
-- Show weather widget on game cards (outdoor stadiums only)
-- Alert when weather conditions change significantly
-
-### Weather Impact Indicators:
-- 🌧️ Rain/Snow > 50% chance
-- 💨 Wind > 15mph (affects passing games)
-- 🥶 Temp < 32°F (affects kicking)
-- ☀️ Clear conditions
+- [x] Weather data for NFL games (Open-Meteo API)
+- [x] ESPN news aggregation with sentiment analysis
+- [x] Player props display
+- [x] Arbitrage detection across sportsbooks
+- [x] Line movement tracking & charts
+- [x] AI analysis with Claude (game picks)
+- [x] Twitter bot for line movement alerts
+- [x] Sportsbook affiliate links (ready for referral IDs)
+- [x] Pro feature teasers (waitlist capture)
 
 ---
 
-## Phase 3: Player News Aggregation
-**Goal:** Surface breaking news that affects betting lines
+## Phase 1: Monetization Infrastructure (PRIORITY)
 
-### Data Sources:
-1. **Twitter/X** (via our existing API)
-   - Follow: @AdamSchefter, @RapSheet, @ShamsCharania, @wojespn
-   - Search for injury/trade keywords
+### 1.1 Upgrade Odds API ($30/mo for 20k requests)
+**Why:** Enables real-time updates (every 15 min vs 6 hours) - this is the core value prop for paid users.
 
-2. **ESPN API** (free, unofficial)
-   - Injury reports
-   - Team news
+### 1.2 Authentication System
+- [ ] Add Clerk or NextAuth.js
+- [ ] User registration/login
+- [ ] User profile page
+- [ ] Session management
 
-3. **Google News RSS** (free)
-   - Search: "[team name] injury" OR "[team name] trade"
+### 1.3 Stripe Integration
+- [ ] Create Stripe account & products
+- [ ] Implement checkout flow
+- [ ] Subscription management (upgrade/cancel)
+- [ ] Webhook handlers for payment events
 
-4. **Reddit API** (free)
-   - r/nfl, r/nba for breaking news
+### 1.4 Paywall Middleware
+- [ ] Protect premium API routes
+- [ ] Rate limiting for free tier
+- [ ] Feature flags per tier
 
-### Implementation:
-- Create news aggregation service
-- NLP to detect sentiment (positive/negative for team)
-- Link news to affected games
-- Show news feed on dashboard
-- Tweet alerts for major breaking news
-
----
-
-## Phase 4: Additional Sports
-**Priority order:**
-1. **MLB** (Spring Training → Regular Season)
-2. **NHL**
-3. **College Football** (CFB)
-4. **College Basketball** (CBB)
-5. **Soccer** (EPL, MLS)
-
-### Notes:
-- The Odds API supports all these sports
-- Each sport = ~2 API calls per update
-- Budget: Stay under 500 calls/month
+### Pricing Tiers
+| Tier | Price | Features |
+|------|-------|----------|
+| **Free** | $0 | View odds (6hr delay), 2 sports, no alerts |
+| **Pro** | $19/mo | Real-time odds, arb alerts (email), all sports |
+| **Premium** | $49/mo | Everything + SMS alerts, AI picks, player props alerts, priority support |
 
 ---
 
-## Phase 5: Player Props
-**Goal:** Track player prop odds across books
+## Phase 2: Premium Features
 
-### Markets:
-- Points (NBA)
-- Passing/Rushing/Receiving yards (NFL)
-- Strikeouts, Hits (MLB)
+### 2.1 Real-Time Arbitrage Alerts
+- [ ] Email notifications (Resend or SendGrid)
+- [ ] SMS notifications (Twilio)
+- [ ] Configurable thresholds (e.g., alert if >1.5% profit)
+- [ ] Alert preferences page
 
-### Challenges:
-- Player props = many more API calls
-- May need to upgrade API tier
-- Start with featured players only
+### 2.2 Increase Update Frequency
+- [ ] Update GitHub Actions to run every 15-30 min
+- [ ] Add WebSocket or polling for live updates
+- [ ] Show "last updated" timestamp
+
+### 2.3 All Sports Support
+- [ ] MLB (April - October)
+- [ ] NHL (October - June)
+- [ ] College Football (August - January)
+- [ ] College Basketball (November - April)
+- [ ] Soccer (EPL, La Liga, MLS)
+- [ ] MMA/UFC
+
+---
+
+## Phase 3: Growth & Revenue
+
+### 3.1 Affiliate Revenue (Passive Income)
+- [ ] Sign up for sportsbook affiliate programs:
+  - FanDuel: https://www.fanduel.com/affiliates
+  - DraftKings: https://www.draftkings.com/affiliates
+  - BetMGM: https://promo.betmgm.com/en/affiliates
+  - Caesars: https://www.caesars.com/sportsbook/affiliates
+- [ ] Add referral IDs to `lib/sportsbooks.ts`
+- [ ] Track clicks/conversions
+
+### 3.2 Discord Community
+- [ ] Create Discord server
+- [ ] Bot to post arb alerts to free channel
+- [ ] Private channel for Pro/Premium members
+- [ ] Community engagement
+
+### 3.3 Content & SEO
+- [ ] Blog with betting insights
+- [ ] "How arbitrage works" guide
+- [ ] Twitter/X content strategy
+- [ ] Email newsletter
+
+---
+
+## Phase 4: Scale & Polish
+
+### 4.1 Database Migration
+- [ ] Move from CSV to PostgreSQL (Supabase or Neon)
+- [ ] Faster queries for historical data
+- [ ] User data storage
+- [ ] Analytics tracking
+
+### 4.2 Mobile Experience
+- [ ] PWA (Progressive Web App)
+- [ ] Push notifications
+- [ ] Mobile-optimized UI
+- [ ] Consider React Native app later
+
+### 4.3 Advanced Features
+- [ ] Bet tracking (log your bets, see P/L)
+- [ ] Bankroll management tools
+- [ ] Historical performance analytics
+- [ ] Custom alerts builder
 
 ---
 
@@ -90,16 +121,73 @@
 - [ ] Add loading states to UI
 - [ ] Mobile responsiveness improvements
 - [ ] Add caching layer for API responses
+- [ ] Unit tests for core logic
+- [ ] E2E tests with Playwright
 
 ---
 
 ## API Budget Planning
-Current: Free tier (500 requests/month)
+
+### Current: Free tier (500 requests/month)
+Barely sufficient for 2 sports, 2x/day updates.
+
+### Recommended: Mega tier ($30/mo, 20k requests)
 
 | Feature | Calls/Update | Updates/Day | Monthly |
 |---------|-------------|-------------|---------|
-| NFL + NBA odds | 8 | 4 | 960 ❌ |
-| Reduce to 3x/day | 8 | 3 | 720 ❌ |
-| Reduce to 2x/day | 8 | 2 | 480 ✅ |
+| NFL + NBA | 8 | 96 (every 15 min) | 2,880 |
+| + MLB + NHL | 8 | 96 | 5,760 |
+| + Player Props | 16 | 48 | 8,640 |
+| **Total** | - | - | ~17,280 ✅ |
 
-**Recommendation:** Upgrade to Basic tier ($20/mo, 10k requests) when adding more sports
+With 20k requests, you can update all sports every 15 minutes during game days.
+
+---
+
+## Revenue Projections
+
+### Conservative (Month 6)
+- 100 Pro users @ $19 = $1,900
+- 20 Premium users @ $49 = $980
+- Affiliate revenue = $500
+- **Total: $3,380/mo**
+
+### Costs
+- Odds API: $30
+- Vercel Pro: $20
+- Clerk: $25
+- Stripe fees: ~3%
+- Twilio/Resend: $20
+- **Total: ~$100/mo**
+
+### Net: ~$3,280/mo profit
+
+---
+
+## Quick Reference
+
+### File Locations
+- Affiliate links: `web/lib/sportsbooks.ts`
+- Pro teasers: `web/components/ProTeaser.tsx`
+- Main page: `web/app/page.tsx`
+- Arbitrage logic: `web/lib/arbitrage.ts`
+- Twitter bot: `ante_ai/twitter_bot.py`
+- GitHub Actions: `.github/workflows/`
+
+### Environment Variables Needed
+```
+# Already set
+ODDS_API_KEY=xxx
+TWITTER_CLIENT_ID=xxx
+TWITTER_CLIENT_SECRET=xxx
+TWITTER_REFRESH_TOKEN=xxx
+ANTHROPIC_API_KEY=xxx
+
+# TODO: Add for monetization
+CLERK_SECRET_KEY=xxx
+STRIPE_SECRET_KEY=xxx
+STRIPE_WEBHOOK_SECRET=xxx
+TWILIO_ACCOUNT_SID=xxx
+TWILIO_AUTH_TOKEN=xxx
+RESEND_API_KEY=xxx
+```

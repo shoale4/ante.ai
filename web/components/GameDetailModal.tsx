@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { GameOdds } from "@/lib/types";
 import { LineMovementChart } from "./LineMovementChart";
 import { PlayerPropsSection } from "./PlayerPropsSection";
+import { BookName } from "./BookLink";
 
 interface Props {
   game: GameOdds;
@@ -269,7 +270,7 @@ function MarketSection({ title, description, homeTeam, awayTeam, homeOdds, awayO
               return (
                 <tr key={book}>
                   <td className="py-3">
-                    <span className="font-medium capitalize">{book}</span>
+                    <BookName book={book} />
                   </td>
                   <td className="py-3 text-right">
                     {away ? (
@@ -362,7 +363,7 @@ function TotalSection({ title, description, overOdds, underOdds }: TotalSectionP
               return (
                 <tr key={book}>
                   <td className="py-3">
-                    <span className="font-medium capitalize">{book}</span>
+                    <BookName book={book} />
                   </td>
                   <td className="py-3 text-right">
                     {over ? (

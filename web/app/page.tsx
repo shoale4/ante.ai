@@ -3,6 +3,7 @@ import { UnifiedFeed } from "@/components/UnifiedFeed";
 import { fetchAllESPNNews } from "@/lib/espn-news";
 import { getWeatherForGames, GameWeather } from "@/lib/weather";
 import { ArbitrageFinder, ArbitrageBadge } from "@/components/ArbitrageFinder";
+import { ProTeaser } from "@/components/ProTeaser";
 
 export const revalidate = 300; // Revalidate every 5 minutes
 
@@ -75,6 +76,18 @@ export default async function Home() {
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-8">
         {/* Arbitrage Section */}
         <ArbitrageFinder games={games} />
+
+        {/* Pro Features Teaser */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <ProTeaser
+            feature="Real-Time Arbitrage Alerts"
+            description="Get instant SMS & email alerts when arbitrage opportunities appear. Never miss a guaranteed profit again."
+          />
+          <ProTeaser
+            feature="AI-Powered Picks"
+            description="Unlock Claude AI analysis for every game with confidence scores, key factors, and best bet recommendations."
+          />
+        </div>
 
         {/* Feed Section */}
         <UnifiedFeed

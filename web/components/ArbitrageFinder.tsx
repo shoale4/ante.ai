@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
+import { BookLink } from "./BookLink";
 
 const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
@@ -197,7 +198,7 @@ function CompactArbitrageRow({
                       </span>
                     </div>
                     <div className="flex justify-between items-center mt-1 text-xs text-[--text-secondary]">
-                      <span className="capitalize">{leg.book}</span>
+                      <BookLink book={leg.book} showIcon />
                       <span>Bet ${leg.stake.toFixed(2)}</span>
                     </div>
                   </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PlayerProp } from "@/lib/types";
+import { getAffiliateUrl, getBookDisplayName } from "@/lib/sportsbooks";
 
 interface Props {
   eventId: string;
@@ -151,12 +152,15 @@ export function PlayerPropsSection({ eventId }: Props) {
                     const bestUnder = Math.max(...prop.books.map((b) => b.underPrice));
 
                     return (
-                      <div
+                      <a
                         key={book.book}
-                        className="bg-gray-50 rounded-lg p-2 text-center"
+                        href={getAffiliateUrl(book.book)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-gray-50 rounded-lg p-2 text-center hover:bg-gray-100 transition-colors block"
                       >
-                        <div className="text-xs text-[--text-secondary] capitalize mb-1">
-                          {book.book}
+                        <div className="text-xs text-[--text-secondary] mb-1">
+                          {getBookDisplayName(book.book)}
                         </div>
                         <div className="flex justify-center gap-2 text-sm">
                           <span
@@ -179,7 +183,7 @@ export function PlayerPropsSection({ eventId }: Props) {
                             U {formatOdds(book.underPrice)}
                           </span>
                         </div>
-                      </div>
+                      </a>
                     );
                   })}
                 </div>
