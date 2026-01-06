@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 
@@ -18,14 +18,18 @@ interface Props {
   onWaitlist?: () => void;
 }
 
-export function ArbitrageFinder({ games, onWaitlist }: Props) {
+export function ArbitrageFinder({ games }: Props) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showMore, setShowMore] = useState(false);
+
   const allOpportunities = useMemo(() => {
     const opps = findAllArbitrage(games);
     return opps.sort((a, b) => b.profit - a.profit);
   }, [games]);
 
   const topProfit = allOpportunities[0]?.profit || 0;
-  const previewOpps = allOpportunities.slice(0, 3);
+  const featured = allOpportunities.slice(0, 3);
+  const remaining = allOpportunities.slice(3);
 
   return (
     <div className="space-y-3">
@@ -40,12 +44,7 @@ export function ArbitrageFinder({ games, onWaitlist }: Props) {
             <span className="text-sm">💰</span>
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-sm text-gray-900">Arbitrage</h3>
-              <span className="px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-orange-500 text-[8px] font-bold text-black uppercase">
-                Pro
-              </span>
-            </div>
+            <h3 className="font-semibold text-sm text-gray-900">Arbitrage Scanner</h3>
             <p className="text-[11px] text-gray-500">Guaranteed profit opportunities</p>
           </div>
         </div>
@@ -65,114 +64,191 @@ export function ArbitrageFinder({ games, onWaitlist }: Props) {
         </div>
       </div>
 
-      {/* Locked Preview */}
-      <div className="relative rounded-xl overflow-hidden border border-gray-100">
-        {/* Blurred Preview */}
-        <div className="blur-[6px] pointer-events-none select-none opacity-50 p-3">
-          <div className="space-y-2">
-            {previewOpps.length > 0 ? (
-              previewOpps.map((opp, idx) => (
-                <PreviewArbCard key={idx} opportunity={opp} rank={idx + 1} />
-              ))
-            ) : (
-              <>
-                <PlaceholderArbCard profit={2.4} rank={1} />
-                <PlaceholderArbCard profit={1.8} rank={2} />
-                <PlaceholderArbCard profit={1.2} rank={3} />
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Lock Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/80 via-white/90 to-white/80">
-          <div className="text-center px-4 py-4 sm:py-6">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-2.5 sm:mb-3 shadow-lg shadow-green-500/25">
-              <span className="text-lg sm:text-xl">💰</span>
-            </div>
-            <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">
-              {allOpportunities.length > 0
-                ? `${allOpportunities.length} Arb Opportunities Found`
-                : "Arbitrage Scanner"
-              }
-            </h3>
-            <p className="text-[11px] sm:text-xs text-gray-500 mb-3 sm:mb-4 max-w-[220px] sm:max-w-[240px] mx-auto leading-relaxed">
-              {allOpportunities.length > 0
-                ? `Up to +${topProfit.toFixed(1)}% guaranteed profit. Unlock to see exact bets.`
-                : "Get notified instantly when risk-free profit opportunities appear."
-              }
-            </p>
-            <button
-              onClick={onWaitlist}
-              className="px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 text-white font-semibold text-xs sm:text-[13px] shadow-md shadow-orange-500/25 hover:shadow-orange-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              Unlock with Pro
-            </button>
-            <p className="text-[9px] sm:text-[10px] text-gray-400 mt-2">
-              Join 2,400+ bettors on the waitlist
-            </p>
-          </div>
-        </div>
+      {/* Warning Banner - Compact */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+        <span className="text-amber-500 text-xs">⚠️</span>
+        <p className="text-[10px] text-amber-700">
+          <strong>Preview:</strong> Data may be stale. Do not place real bets.
+        </p>
       </div>
+
+      {/* Content */}
+      {allOpportunities.length > 0 ? (
+        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+          {/* Featured opportunities */}
+          <div className="divide-y divide-gray-100">
+            {featured.map((opp, idx) => (
+              <FeaturedArbRow
+                key={`${opp.gameId}-${opp.market}`}
+                opportunity={opp}
+                rank={idx + 1}
+                isExpanded={expandedId === `${opp.gameId}-${opp.market}`}
+                onToggle={() => setExpandedId(
+                  expandedId === `${opp.gameId}-${opp.market}` ? null : `${opp.gameId}-${opp.market}`
+                )}
+              />
+            ))}
+          </div>
+
+          {/* More opportunities section */}
+          {remaining.length > 0 && (
+            <div className="border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowMore(!showMore)}
+                className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-xs font-medium text-gray-600">
+                  {remaining.length} more opportunities
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-400 transition-transform ${showMore ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showMore && (
+                <div className="px-3 pb-3 space-y-1.5">
+                  {remaining.map((opp) => (
+                    <CompactArbRow
+                      key={`${opp.gameId}-${opp.market}`}
+                      opportunity={opp}
+                      isExpanded={expandedId === `${opp.gameId}-${opp.market}`}
+                      onToggle={() => setExpandedId(
+                        expandedId === `${opp.gameId}-${opp.market}` ? null : `${opp.gameId}-${opp.market}`
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-gray-100 bg-gray-50 p-6 text-center">
+          <div className="w-12 h-12 rounded-xl bg-gray-200 flex items-center justify-center mx-auto mb-3">
+            <span className="text-xl">🔍</span>
+          </div>
+          <p className="text-sm font-medium text-gray-600">No arbitrage opportunities</p>
+          <p className="text-xs text-gray-400 mt-1">Check back soon</p>
+        </div>
+      )}
     </div>
   );
 }
 
-// Preview card (blurred)
-function PreviewArbCard({ opportunity, rank }: { opportunity: ArbitrageOpportunity; rank: number }) {
-  const rankColors = [
-    "from-amber-400 to-orange-500",
-    "from-gray-300 to-gray-400",
-    "from-amber-600 to-amber-700",
-  ];
+// Featured row with medal ranking
+function FeaturedArbRow({
+  opportunity,
+  rank,
+  isExpanded,
+  onToggle
+}: {
+  opportunity: ArbitrageOpportunity;
+  rank: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const medals = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-3">
-      <div className="flex items-center gap-3">
-        <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${rankColors[rank - 1]} flex items-center justify-center`}>
-          <span className="text-xs font-bold text-white">#{rank}</span>
+    <div>
+      <button
+        onClick={onToggle}
+        className="w-full px-3 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-lg">{medals[rank - 1]}</span>
+        <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-xs">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
-          <span className="text-base">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-gray-900 truncate">
+        <div className="flex-1 min-w-0 text-left">
+          <div className="text-[13px] font-semibold text-gray-900 truncate">
             {opportunity.awayTeam.split(" ").pop()} @ {opportunity.homeTeam.split(" ").pop()}
           </div>
-          <div className="text-[11px] text-gray-500 capitalize">{opportunity.market}</div>
+          <div className="text-[10px] text-gray-500 capitalize">{opportunity.market}</div>
         </div>
-        <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500 to-emerald-500">
-          <span className="text-sm font-bold text-white">+${(opportunity.profit).toFixed(2)}</span>
+        <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500">
+          <span className="text-xs font-bold text-white">+{opportunity.profit.toFixed(1)}%</span>
         </div>
-      </div>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isExpanded && <BetDetails opportunity={opportunity} />}
     </div>
   );
 }
 
-// Placeholder when no real arbs
-function PlaceholderArbCard({ profit, rank }: { profit: number; rank: number }) {
-  const rankColors = [
-    "from-amber-400 to-orange-500",
-    "from-gray-300 to-gray-400",
-    "from-amber-600 to-amber-700",
-  ];
-
+// Compact row for additional opportunities
+function CompactArbRow({
+  opportunity,
+  isExpanded,
+  onToggle
+}: {
+  opportunity: ArbitrageOpportunity;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-3">
-      <div className="flex items-center gap-3">
-        <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${rankColors[rank - 1]} flex items-center justify-center`}>
-          <span className="text-xs font-bold text-white">#{rank}</span>
+    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-2.5 py-2 flex items-center gap-2 hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-xs">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
+        <div className="flex-1 min-w-0 text-left">
+          <span className="text-xs text-gray-900 truncate">
+            {opportunity.awayTeam.split(" ").pop()} @ {opportunity.homeTeam.split(" ").pop()}
+          </span>
         </div>
-        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
-          <span className="text-base">🏈</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-gray-900">Team A @ Team B</div>
-          <div className="text-[11px] text-gray-500">spread</div>
-        </div>
-        <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500 to-emerald-500">
-          <span className="text-sm font-bold text-white">+${profit.toFixed(2)}</span>
-        </div>
+        <span className="text-xs font-bold text-green-600">+{opportunity.profit.toFixed(1)}%</span>
+        <svg
+          className={`w-3 h-3 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isExpanded && <BetDetails opportunity={opportunity} compact />}
+    </div>
+  );
+}
+
+// Shared bet details component
+function BetDetails({ opportunity, compact }: { opportunity: ArbitrageOpportunity; compact?: boolean }) {
+  return (
+    <div className={`border-t border-gray-100 bg-gray-50 ${compact ? 'p-2' : 'p-3'}`}>
+      <div className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-medium text-gray-500 uppercase mb-1.5`}>
+        Bets for $100
+      </div>
+      <div className={`${compact ? 'space-y-1' : 'space-y-1.5'}`}>
+        {opportunity.legs.map((leg, idx) => (
+          <div key={idx} className={`flex items-center justify-between bg-white rounded ${compact ? 'px-2 py-1.5' : 'p-2'} border border-gray-100`}>
+            <div>
+              <div className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-gray-900`}>{leg.side}</div>
+              <div className={`${compact ? 'text-[9px]' : 'text-[10px]'} text-gray-500`}>{leg.book}</div>
+            </div>
+            <div className="text-right">
+              <div className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-gray-900`}>${leg.stake.toFixed(2)}</div>
+              <div className={`${compact ? 'text-[9px]' : 'text-[10px]'} text-gray-500`}>@ {leg.odds > 0 ? `+${leg.odds}` : leg.odds}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className={`${compact ? 'mt-1.5 pt-1.5' : 'mt-2 pt-2'} border-t border-gray-200 flex items-center justify-between`}>
+        <span className={`${compact ? 'text-[9px]' : 'text-[11px]'} text-gray-500`}>Return</span>
+        <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-green-600`}>${(100 + opportunity.profit).toFixed(2)}</span>
       </div>
     </div>
   );
