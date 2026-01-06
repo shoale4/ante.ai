@@ -140,6 +140,23 @@ export function ArbitrageFinder({ games }: Props) {
   );
 }
 
+// Format game time
+function formatGameTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+  const timeStr = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  if (isToday) return `Today ${timeStr}`;
+  if (isTomorrow) return `Tomorrow ${timeStr}`;
+
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) + ` ${timeStr}`;
+}
+
 // Featured row with medal ranking
 function FeaturedArbRow({
   opportunity,
@@ -168,7 +185,11 @@ function FeaturedArbRow({
           <div className="text-[13px] font-semibold text-gray-900 truncate">
             {opportunity.awayTeam.split(" ").pop()} @ {opportunity.homeTeam.split(" ").pop()}
           </div>
-          <div className="text-[10px] text-gray-500 capitalize">{opportunity.market}</div>
+          <div className="text-[10px] text-gray-500">
+            <span className="capitalize">{opportunity.market}</span>
+            <span className="mx-1">·</span>
+            <span>{formatGameTime(opportunity.eventStartTime)}</span>
+          </div>
         </div>
         <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500">
           <span className="text-xs font-bold text-white">+{opportunity.profit.toFixed(1)}%</span>
@@ -206,9 +227,10 @@ function CompactArbRow({
       >
         <span className="text-xs">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
         <div className="flex-1 min-w-0 text-left">
-          <span className="text-xs text-gray-900 truncate">
+          <div className="text-xs text-gray-900 truncate">
             {opportunity.awayTeam.split(" ").pop()} @ {opportunity.homeTeam.split(" ").pop()}
-          </span>
+          </div>
+          <div className="text-[9px] text-gray-400">{formatGameTime(opportunity.eventStartTime)}</div>
         </div>
         <span className="text-xs font-bold text-green-600">+{opportunity.profit.toFixed(1)}%</span>
         <svg
