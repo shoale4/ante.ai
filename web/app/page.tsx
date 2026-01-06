@@ -1,5 +1,5 @@
 import { getGameOdds, getLineMovements } from "@/lib/data";
-import { fetchAllESPNNews } from "@/lib/espn-news";
+import { fetchAllNews } from "@/lib/news-sources";
 import { getWeatherForGames, GameWeather } from "@/lib/weather";
 import { ArbitrageBadge } from "@/components/ArbitrageFinder";
 import { HomeClient } from "@/components/HomeClient";
@@ -10,7 +10,7 @@ export default async function Home() {
   const [games, movements, news] = await Promise.all([
     getGameOdds(),
     getLineMovements(),
-    fetchAllESPNNews(),
+    fetchAllNews(),
   ]);
 
   const nflGames = games.filter((g) => g.sport === "NFL");
@@ -42,17 +42,14 @@ export default async function Home() {
                     <polyline points="16 7 22 7 22 13"></polyline>
                   </svg>
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center shadow-md">
-                  <span className="text-white text-[7px] sm:text-[8px] font-bold">AI</span>
-                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-md border-2 border-white" />
               </div>
               {/* Logo Text */}
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                   <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">hedj</span>
-                  <span className="text-gray-800">.io</span>
                 </h1>
-                <p className="hidden sm:block text-[10px] font-medium text-[--text-secondary] tracking-widest uppercase">Smart Odds Tracking</p>
+                <p className="hidden sm:block text-[10px] font-medium text-[--text-secondary] tracking-widest uppercase">Bet Smarter</p>
               </div>
             </div>
             {/* Desktop badges */}
@@ -89,11 +86,31 @@ export default async function Home() {
         weatherData={weatherData}
       />
 
-      {/* Footer - desktop only */}
-      <footer className="hidden sm:block border-t border-gray-200/60 mt-8 bg-white/50">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between text-sm text-[--text-secondary]">
-          <p>Data refreshes every 5 minutes</p>
-          <p>Powered by ESPN & The Odds API</p>
+      {/* Footer */}
+      <footer className="border-t border-gray-200/60 mt-8 bg-white/50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+          {/* Main footer content */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-900">hedj</span>
+              <span className="text-xs text-gray-400">Bet Smarter</span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <span>Data refreshes every 5 min</span>
+              <span className="hidden sm:inline text-gray-300">|</span>
+              <span className="hidden sm:inline">7+ sportsbooks</span>
+            </div>
+          </div>
+
+          {/* Legal disclaimer */}
+          <div className="pt-4 border-t border-gray-100">
+            <p className="text-[10px] text-gray-400 text-center leading-relaxed max-w-2xl mx-auto">
+              Must be 21+ (18+ in some states). Gambling problem? Call 1-800-GAMBLER.
+              Hedj provides informational content only and does not facilitate gambling.
+              Odds are for informational purposes and may not reflect actual sportsbook lines.
+              Always verify odds directly with the sportsbook before placing bets.
+            </p>
+          </div>
         </div>
       </footer>
     </main>

@@ -22,9 +22,10 @@ interface Props {
   game: GameOdds;
   weather?: GameWeather;
   relatedNews?: NewsItem[];
+  onWaitlist?: () => void;
 }
 
-export function GameFeedCard({ game, weather, relatedNews = [] }: Props) {
+export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const gameTime = new Date(game.eventStartTime);
@@ -133,7 +134,7 @@ export function GameFeedCard({ game, weather, relatedNews = [] }: Props) {
         </div>
       </div>
 
-      <GameDetailModal game={game} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <GameDetailModal game={game} isOpen={isOpen} onClose={() => setIsOpen(false)} onWaitlist={onWaitlist} />
     </>
   );
 }

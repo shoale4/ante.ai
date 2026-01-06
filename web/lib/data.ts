@@ -1,21 +1,51 @@
 import { OddsSnapshot, GameOdds, LineMovement } from "./types";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-// Fetch CSV from GitHub raw URL
+// Fetch CSV from GitHub raw URL (production) or local file (development)
 const GITHUB_RAW_URL =
   "https://raw.githubusercontent.com/shoale4/hedj/main/data/latest/latest.csv";
+const GITHUB_HISTORY_URL =
+  "https://raw.githubusercontent.com/shoale4/hedj/main/data/history/odds_history.csv";
+
+const isDev = process.env.NODE_ENV === "development";
+
+// Historical odds record for movement calculation
+interface HistoricalOdds {
+  timestamp: string;
+  book: string;
+  sport: string;
+  eventId: string;
+  eventStartTime: string;
+  homeTeam: string;
+  awayTeam: string;
+  marketType: "moneyline" | "spread" | "total";
+  outcome: "home" | "away" | "over" | "under";
+  price: number;
+  line: number | null;
+}
 
 export async function getLatestOdds(): Promise<OddsSnapshot[]> {
   try {
-    const response = await fetch(GITHUB_RAW_URL, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    });
+    let content: string;
 
-    if (!response.ok) {
-      console.error("Failed to fetch CSV:", response.status);
-      return [];
+    if (isDev) {
+      // In development, read from local file for fresh data
+      const localPath = join(process.cwd(), "..", "data", "latest", "latest.csv");
+      content = readFileSync(localPath, "utf-8");
+    } else {
+      // In production, fetch from GitHub
+      const response = await fetch(GITHUB_RAW_URL, {
+        next: { revalidate: 300 }, // Cache for 5 minutes
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch CSV:", response.status);
+        return [];
+      }
+
+      content = await response.text();
     }
-
-    const content = await response.text();
     const lines = content.trim().split("\n");
 
     if (lines.length < 2) {
@@ -105,14 +135,16 @@ export async function getGameOdds(): Promise<GameOdds[]> {
     game.markets[snapshot.marketType].push(bookOdds);
   }
 
-  // Filter to only today's games and future games (exclude past games)
+  // Filter to only upcoming games (exclude games that have already started and stub data)
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const filteredGames = Array.from(gamesMap.values()).filter((game) => {
+    // Exclude stub/test data
+    if (game.eventId.includes("stub")) return false;
+
     const gameTime = new Date(game.eventStartTime);
-    // Show games from today onwards (game start time >= start of today)
-    return gameTime >= todayStart;
+    // Only show games that haven't started yet
+    return gameTime > now;
   });
 
   // Sort by event start time
@@ -123,38 +155,130 @@ export async function getGameOdds(): Promise<GameOdds[]> {
   );
 }
 
-export async function getLineMovements(): Promise<LineMovement[]> {
-  const odds = await getLatestOdds();
+// Fetch historical odds data
+async function getHistoricalOdds(): Promise<HistoricalOdds[]> {
+  try {
+    let content: string;
 
-  // Filter to only rows with significant movement
-  const movements = odds
-    .filter((o) => {
-      const hasLineMove = o.lineMovement !== null && o.lineMovement !== 0;
-      const hasPriceMove = Math.abs(o.priceMovement) >= 5;
-      return hasLineMove || hasPriceMove;
-    })
-    .map((o) => ({
-      eventId: o.eventId,
-      sport: o.sport,
-      homeTeam: o.homeTeam,
-      awayTeam: o.awayTeam,
-      eventStartTime: o.eventStartTime,
-      marketType: o.marketType,
-      outcome: o.outcome,
-      book: o.book,
-      openingPrice: o.openingPrice,
-      currentPrice: o.currentPrice,
-      priceMovement: o.priceMovement,
-      openingLine: o.openingLine,
-      currentLine: o.currentLine,
-      lineMovement: o.lineMovement,
-      lastUpdated: o.lastUpdated,
-    }));
+    if (isDev) {
+      const localPath = join(process.cwd(), "..", "data", "history", "odds_history.csv");
+      content = readFileSync(localPath, "utf-8");
+    } else {
+      const response = await fetch(GITHUB_HISTORY_URL, {
+        next: { revalidate: 300 },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch history CSV:", response.status);
+        return [];
+      }
+
+      content = await response.text();
+    }
+
+    const lines = content.trim().split("\n");
+    if (lines.length < 2) return [];
+
+    // Parse: timestamp_utc,book,sport,event_id,event_start_time,home_team,away_team,market_type,outcome,price,line
+    return lines.slice(1).map((line) => {
+      const values = parseCSVLine(line);
+      return {
+        timestamp: values[0],
+        book: values[1],
+        sport: values[2],
+        eventId: values[3],
+        eventStartTime: values[4],
+        homeTeam: values[5],
+        awayTeam: values[6],
+        marketType: values[7] as "moneyline" | "spread" | "total",
+        outcome: values[8] as "home" | "away" | "over" | "under",
+        price: parseInt(values[9]) || 0,
+        line: values[10] ? parseFloat(values[10]) : null,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching odds_history.csv:", error);
+    return [];
+  }
+}
+
+export async function getLineMovements(): Promise<LineMovement[]> {
+  const historicalOdds = await getHistoricalOdds();
+
+  if (historicalOdds.length === 0) {
+    return [];
+  }
+
+  // Group by event+book+market+outcome, track earliest and latest prices
+  const priceHistory = new Map<string, {
+    earliest: HistoricalOdds;
+    latest: HistoricalOdds;
+  }>();
+
+  for (const odds of historicalOdds) {
+    const key = `${odds.eventId}|${odds.book}|${odds.marketType}|${odds.outcome}`;
+
+    if (!priceHistory.has(key)) {
+      priceHistory.set(key, { earliest: odds, latest: odds });
+    } else {
+      const existing = priceHistory.get(key)!;
+      // Update earliest if this timestamp is older
+      if (odds.timestamp < existing.earliest.timestamp) {
+        existing.earliest = odds;
+      }
+      // Update latest if this timestamp is newer
+      if (odds.timestamp > existing.latest.timestamp) {
+        existing.latest = odds;
+      }
+    }
+  }
+
+  // Calculate movements comparing earliest to latest
+  const now = new Date();
+  const movements: LineMovement[] = [];
+
+  for (const [, { earliest, latest }] of priceHistory) {
+    // Only show future games
+    const gameTime = new Date(latest.eventStartTime);
+    if (gameTime < now) continue;
+
+    // Exclude stub data
+    if (latest.eventId.includes("stub")) continue;
+
+    const priceMovement = latest.price - earliest.price;
+    const lineMovement = (latest.line !== null && earliest.line !== null)
+      ? latest.line - earliest.line
+      : null;
+
+    // Only include if there's meaningful movement
+    const hasLineMove = lineMovement !== null && Math.abs(lineMovement) >= 0.5;
+    const hasPriceMove = Math.abs(priceMovement) >= 5;
+
+    if (!hasLineMove && !hasPriceMove) continue;
+
+    movements.push({
+      eventId: latest.eventId,
+      sport: latest.sport,
+      homeTeam: latest.homeTeam,
+      awayTeam: latest.awayTeam,
+      eventStartTime: latest.eventStartTime,
+      marketType: latest.marketType,
+      outcome: latest.outcome,
+      book: latest.book,
+      openingPrice: earliest.price,
+      currentPrice: latest.price,
+      priceMovement,
+      openingLine: earliest.line,
+      currentLine: latest.line,
+      lineMovement,
+      lastUpdated: latest.timestamp,
+    });
+  }
 
   // Sort by absolute movement (most significant first)
   return movements.sort((a, b) => {
-    const aMove = Math.abs(a.lineMovement || 0) + Math.abs(a.priceMovement) / 10;
-    const bMove = Math.abs(b.lineMovement || 0) + Math.abs(b.priceMovement) / 10;
+    const aMove = Math.abs(a.lineMovement || 0) * 10 + Math.abs(a.priceMovement);
+    const bMove = Math.abs(b.lineMovement || 0) * 10 + Math.abs(b.priceMovement);
     return bMove - aMove;
   });
 }

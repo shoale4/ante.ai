@@ -11,9 +11,10 @@ interface Props {
   game: GameOdds;
   colorIndex?: number;
   weather?: GameWeather;
+  onWaitlist?: () => void;
 }
 
-export function GameCard({ game, colorIndex = 0, weather }: Props) {
+export function GameCard({ game, colorIndex = 0, weather, onWaitlist }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const gameTime = new Date(game.eventStartTime);
@@ -146,7 +147,7 @@ export function GameCard({ game, colorIndex = 0, weather }: Props) {
         </div>
       </button>
 
-      <GameDetailModal game={game} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <GameDetailModal game={game} isOpen={isOpen} onClose={() => setIsOpen(false)} onWaitlist={onWaitlist} />
     </>
   );
 }

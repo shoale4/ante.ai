@@ -10,6 +10,7 @@ interface Props {
   game: GameOdds;
   isOpen: boolean;
   onClose: () => void;
+  onWaitlist?: () => void;
 }
 
 type TabType = "odds" | "spread" | "ml" | "total" | "props";
@@ -22,7 +23,7 @@ const tabs: { id: TabType; label: string }[] = [
   { id: "props", label: "Props" },
 ];
 
-export function GameDetailModal({ game, isOpen, onClose }: Props) {
+export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>("odds");
 
   useEffect(() => {
@@ -162,7 +163,7 @@ export function GameDetailModal({ game, isOpen, onClose }: Props) {
           )}
 
           {activeTab === "props" && (
-            <PlayerPropsSection eventId={game.eventId} />
+            <PlayerPropsSection eventId={game.eventId} onWaitlist={onWaitlist} />
           )}
         </div>
       </div>
@@ -173,7 +174,7 @@ export function GameDetailModal({ game, isOpen, onClose }: Props) {
 // Chart section wrapper
 function ChartSection({ eventId, marketType, homeTeam, awayTeam }: {
   eventId: string;
-  marketType: string;
+  marketType: "moneyline" | "spread" | "total";
   homeTeam: string;
   awayTeam: string;
 }) {

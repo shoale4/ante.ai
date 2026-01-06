@@ -214,8 +214,9 @@ export function getTeamLogo(teamName: string, sport: Sport): string | null {
 
   // Different URL patterns for different sports
   if (sport === "Soccer") {
-    // ESPN uses soccer paths
-    return `https://a.espncdn.com/i/teamlogos/soccer/500/${abbr}.png`;
+    // ESPN's soccer logo URLs are inconsistent/broken for many teams
+    // Fall back to initials display instead
+    return null;
   }
 
   if (sport === "MMA") {

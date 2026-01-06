@@ -182,8 +182,8 @@ export function LineMovementChart({ eventId, marketType, homeTeam, awayTeam }: P
       </div>
 
       {/* Chart */}
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-64 min-h-[256px]">
+        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
           <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
@@ -211,11 +211,11 @@ export function LineMovementChart({ eventId, marketType, homeTeam, awayTeam }: P
                 borderRadius: "8px",
                 fontSize: "12px",
               }}
-              formatter={(value: number, name: string) => [
-                marketType === "moneyline"
+              formatter={(value, name) => [
+                typeof value === "number" && marketType === "moneyline"
                   ? value > 0 ? `+${value}` : value
-                  : value,
-                name.charAt(0).toUpperCase() + name.slice(1),
+                  : value ?? 0,
+                String(name).charAt(0).toUpperCase() + String(name).slice(1),
               ]}
             />
             <Legend

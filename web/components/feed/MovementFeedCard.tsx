@@ -4,6 +4,7 @@ import { LineMovement } from "@/lib/types";
 
 interface Props {
   movement: LineMovement;
+  compact?: boolean;
 }
 
 const BOOK_SHORT: Record<string, string> = {
@@ -17,7 +18,7 @@ const BOOK_SHORT: Record<string, string> = {
   mybookie: "MyB",
 };
 
-export function MovementFeedCard({ movement }: Props) {
+export function MovementFeedCard({ movement, compact = false }: Props) {
   const isSignificant = Math.abs(movement.priceMovement) >= 15;
   const direction = movement.priceMovement > 0 ? "up" : "down";
   const timeAgo = getTimeAgo(movement.lastUpdated);
@@ -58,6 +59,46 @@ export function MovementFeedCard({ movement }: Props) {
 
   const bookShort = BOOK_SHORT[movement.book.toLowerCase()] || movement.book.slice(0, 3).toUpperCase();
 
+  // Compact version for grouped display
+  if (compact) {
+    return (
+      <div className="flex items-center justify-between px-3 py-2 bg-white hover:bg-gray-50 transition-colors">
+        {/* Left: Side, Market, Book */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[11px] font-medium text-gray-700">{getSideShort()}</span>
+          <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{marketLabel}</span>
+          <span className="text-[10px] text-gray-400">{bookShort}</span>
+        </div>
+
+        {/* Right: Movement */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="text-gray-400">{formatPrice(movement.openingPrice)}</span>
+            <svg
+              className={`w-3 h-3 ${direction === "up" ? "text-green-500" : "text-red-500"} ${direction === "down" ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            <span className={`font-semibold ${direction === "up" ? "text-green-600" : "text-red-600"}`}>
+              {formatPrice(movement.currentPrice)}
+            </span>
+          </div>
+          <div
+            className={`px-1.5 py-0.5 rounded text-[9px] font-bold tabular-nums ${
+              direction === "up" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
+            }`}
+          >
+            {direction === "up" ? "+" : ""}{movement.priceMovement}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Full version
   return (
     <div
       className={`bg-white rounded-xl border p-3 cursor-pointer active:scale-[0.99] transition-all ${
@@ -154,8 +195,14 @@ export function MovementFeedCard({ movement }: Props) {
 }
 
 function getTimeAgo(dateString: string): string {
+  if (!dateString) return "";
+
   const now = new Date();
   const date = new Date(dateString);
+
+  // Handle invalid dates
+  if (isNaN(date.getTime())) return "";
+
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);

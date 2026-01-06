@@ -1,197 +1,108 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PlayerProp } from "@/lib/types";
-import { getAffiliateUrl, getBookDisplayName } from "@/lib/sportsbooks";
+import { ProBadge } from "./ProTeaser";
 
-interface Props {
-  eventId: string;
-}
+// Mock preview data for the locked state
+const PREVIEW_PROPS = [
+  { player: "J. Allen", prop: "Pass Yards", line: 275.5, over: -115, under: -105, bestOver: true },
+  { player: "J. Allen", prop: "Pass TDs", line: 2.5, over: +125, under: -145, bestUnder: true },
+  { player: "S. Diggs", prop: "Rec Yards", line: 72.5, over: -110, under: -110, bestOver: false },
+  { player: "D. Henry", prop: "Rush Yards", line: 85.5, over: -120, under: +100, bestUnder: true },
+  { player: "L. Jackson", prop: "Pass Yards", line: 195.5, over: -108, under: -112, bestOver: true },
+  { player: "L. Jackson", prop: "Rush Yards", line: 65.5, over: -115, under: -105, bestUnder: false },
+];
 
 function formatOdds(price: number): string {
-  if (price === 0) return "-";
   return price > 0 ? `+${price}` : `${price}`;
 }
 
-function formatPropType(propType: string): string {
-  const mapping: Record<string, string> = {
-    player_points: "Points",
-    player_rebounds: "Rebounds",
-    player_assists: "Assists",
-    player_threes: "3-Pointers",
-    player_pass_yds: "Pass Yards",
-    player_pass_tds: "Pass TDs",
-    player_rush_yds: "Rush Yards",
-    player_receptions: "Receptions",
-    player_reception_yds: "Rec Yards",
-  };
-  return mapping[propType] || propType.replace("player_", "").replace(/_/g, " ");
+interface Props {
+  eventId: string;
+  onWaitlist?: () => void;
 }
 
-export function PlayerPropsSection({ eventId }: Props) {
-  const [props, setProps] = useState<PlayerProp[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [players, setPlayers] = useState<string[]>([]);
-
-  useEffect(() => {
-    async function fetchProps() {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/props?eventId=${eventId}`);
-        if (!response.ok) throw new Error("Failed to fetch props");
-
-        const result = await response.json();
-        setProps(result.data || []);
-        setPlayers(result.meta?.players || []);
-
-        // Auto-select first player if available
-        if (result.meta?.players?.length > 0 && !selectedPlayer) {
-          setSelectedPlayer(result.meta.players[0]);
-        }
-      } catch (err) {
-        console.error("Error fetching props:", err);
-        setProps([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProps();
-  }, [eventId, selectedPlayer]);
-
-  if (loading) {
-    return (
-      <div className="h-64 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (props.length === 0) {
-    return (
-      <div className="glass-card p-8 text-center">
-        <div className="text-4xl mb-3">📊</div>
-        <h3 className="font-semibold text-lg">No Player Props Available</h3>
-        <p className="text-sm text-[--text-secondary] mt-2">
-          Player props data will appear here when available
-        </p>
-      </div>
-    );
-  }
-
-  // Filter props by selected player
-  const filteredProps = selectedPlayer
-    ? props.filter((p) => p.playerName === selectedPlayer)
-    : props;
-
-  // Group props by player
-  const propsByPlayer = new Map<string, PlayerProp[]>();
-  for (const prop of filteredProps) {
-    if (!propsByPlayer.has(prop.playerName)) {
-      propsByPlayer.set(prop.playerName, []);
-    }
-    propsByPlayer.get(prop.playerName)!.push(prop);
-  }
-
+export function PlayerPropsSection({ eventId, onWaitlist }: Props) {
   return (
-    <div className="space-y-4">
-      {/* Player Filter */}
-      {players.length > 1 && (
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedPlayer(null)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              selectedPlayer === null
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200/80 text-gray-600 hover:bg-gray-300"
-            }`}
-          >
-            All Players
-          </button>
-          {players.map((player) => (
-            <button
-              key={player}
-              onClick={() => setSelectedPlayer(player)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedPlayer === player
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200/80 text-gray-600 hover:bg-gray-300"
-              }`}
+    <div className="relative">
+      {/* Blurred Preview Content */}
+      <div className="blur-[6px] pointer-events-none select-none opacity-60">
+        <div className="space-y-2">
+          {PREVIEW_PROPS.slice(0, 4).map((prop, idx) => (
+            <div
+              key={idx}
+              className="py-2 px-3 bg-gray-50 rounded-xl"
             >
-              {player}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Props by Player */}
-      {Array.from(propsByPlayer.entries()).map(([playerName, playerProps]) => (
-        <div key={playerName} className="glass-card p-4">
-          <h3 className="font-semibold text-lg mb-3">{playerName}</h3>
-          <div className="space-y-3">
-            {playerProps.map((prop, idx) => (
-              <div
-                key={`${prop.propType}-${prop.line}-${idx}`}
-                className="border-b border-gray-100 pb-3 last:border-0 last:pb-0"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm">
-                    {formatPropType(prop.propType)}
+              {/* Top row: Player & Line */}
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[13px] font-semibold text-gray-900">
+                    {prop.player}
                   </span>
-                  <span className="pill pill-blue font-semibold">
-                    {prop.line}
+                  <span className="text-[11px] text-gray-400">·</span>
+                  <span className="text-[11px] text-gray-500">{prop.prop}</span>
+                </div>
+                <span className="text-[12px] font-bold text-gray-900 bg-white px-2 py-0.5 rounded-md border border-gray-200 flex-shrink-0">
+                  {prop.line}
+                </span>
+              </div>
+
+              {/* Bottom row: Over/Under */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-400">O</span>
+                  <span className={`text-xs font-semibold ${prop.bestOver ? 'text-green-600' : 'text-gray-700'}`}>
+                    {formatOdds(prop.over)}
+                    {prop.bestOver && <span className="text-green-500 ml-0.5">★</span>}
                   </span>
                 </div>
-
-                {/* Books Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {prop.books.map((book) => {
-                    // Find best odds
-                    const bestOver = Math.max(...prop.books.map((b) => b.overPrice));
-                    const bestUnder = Math.max(...prop.books.map((b) => b.underPrice));
-
-                    return (
-                      <a
-                        key={book.book}
-                        href={getAffiliateUrl(book.book)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-gray-50 rounded-lg p-2 text-center hover:bg-gray-100 transition-colors block"
-                      >
-                        <div className="text-xs text-[--text-secondary] mb-1">
-                          {getBookDisplayName(book.book)}
-                        </div>
-                        <div className="flex justify-center gap-2 text-sm">
-                          <span
-                            className={`font-medium ${
-                              book.overPrice === bestOver && book.overPrice > 0
-                                ? "text-[--accent-green]"
-                                : ""
-                            }`}
-                          >
-                            O {formatOdds(book.overPrice)}
-                          </span>
-                          <span className="text-gray-300">|</span>
-                          <span
-                            className={`font-medium ${
-                              book.underPrice === bestUnder && book.underPrice > 0
-                                ? "text-[--accent-green]"
-                                : ""
-                            }`}
-                          >
-                            U {formatOdds(book.underPrice)}
-                          </span>
-                        </div>
-                      </a>
-                    );
-                  })}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-400">U</span>
+                  <span className={`text-xs font-semibold ${prop.bestUnder ? 'text-green-600' : 'text-gray-700'}`}>
+                    {formatOdds(prop.under)}
+                    {prop.bestUnder && <span className="text-green-500 ml-0.5">★</span>}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
+
+      {/* Lock Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/80 via-white/90 to-white/80 rounded-xl">
+        <div className="text-center px-4 py-4 sm:py-6">
+          {/* Lock Icon */}
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-2.5 sm:mb-3 shadow-lg shadow-orange-500/25">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+
+          {/* Title */}
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <h3 className="text-sm sm:text-base font-bold text-gray-900">Player Props</h3>
+            <ProBadge />
+          </div>
+
+          {/* Description */}
+          <p className="text-[11px] sm:text-xs text-gray-500 mb-3 sm:mb-4 max-w-[200px] sm:max-w-[220px] mx-auto leading-relaxed">
+            Compare lines across 7+ sportsbooks with best odds highlighted
+          </p>
+
+          {/* CTA Button */}
+          <button
+            onClick={onWaitlist}
+            className="px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 text-white font-semibold text-xs sm:text-[13px] shadow-md shadow-orange-500/25 hover:shadow-orange-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Unlock with Pro
+          </button>
+
+          {/* Subtext */}
+          <p className="text-[9px] sm:text-[10px] text-gray-400 mt-2">
+            Join 2,400+ bettors on the waitlist
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
