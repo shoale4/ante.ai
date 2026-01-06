@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
-from ante_ai.models import EventOdds
+from hedj.models import EventOdds
 
 
 class OddsProvider(ABC):

@@ -1,4 +1,4 @@
-"""Command-line interface for the Ante AI odds feed."""
+"""Command-line interface for the Hedj odds feed."""
 
 from __future__ import annotations
 
@@ -10,10 +10,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
-from ante_ai.models import EventOdds
-from ante_ai.providers.base import OddsProvider
-from ante_ai.providers.example_provider import ExampleProvider
-from ante_ai.storage import OddsStorage
+from hedj.models import EventOdds
+from hedj.providers.base import OddsProvider
+from hedj.providers.example_provider import ExampleProvider
+from hedj.storage import OddsStorage
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ def run_update(config: dict, fetch_props: bool = False) -> None:
 def main() -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
-        description="Ante AI - Sports Betting Odds Movement Feed",
+        description="Hedj - Sports Betting Odds Movement Feed",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(

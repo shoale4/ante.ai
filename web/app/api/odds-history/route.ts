@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Historical odds from GitHub
 const GITHUB_HISTORY_URL =
-  "https://raw.githubusercontent.com/shoale4/ante.ai/main/data/history/odds_history.csv";
+  "https://raw.githubusercontent.com/shoale4/hedj/main/data/history/odds_history.csv";
 
 interface HistoricalOdds {
   timestamp: string;

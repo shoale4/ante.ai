@@ -49,8 +49,8 @@ export default async function Home() {
               {/* Logo Text */}
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">ante</span>
-                  <span className="text-gray-800">.ai</span>
+                  <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">hedj</span>
+                  <span className="text-gray-800">.io</span>
                 </h1>
                 <p className="hidden sm:block text-[10px] font-medium text-[--text-secondary] tracking-widest uppercase">Smart Odds Tracking</p>
               </div>

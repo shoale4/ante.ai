@@ -2,7 +2,7 @@ import { OddsSnapshot, GameOdds, LineMovement } from "./types";
 
 // Fetch CSV from GitHub raw URL
 const GITHUB_RAW_URL =
-  "https://raw.githubusercontent.com/shoale4/ante.ai/main/data/latest/latest.csv";
+  "https://raw.githubusercontent.com/shoale4/hedj/main/data/latest/latest.csv";
 
 export async function getLatestOdds(): Promise<OddsSnapshot[]> {
   try {

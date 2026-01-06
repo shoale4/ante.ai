@@ -19,7 +19,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "AnteAI - Sports Betting Odds & Line Movements",
+  title: "Hedj - Sports Betting Odds & Line Movements",
   description: "Real-time odds tracking, line movement alerts, and best odds comparison across sportsbooks.",
 };
 

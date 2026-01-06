@@ -1,10 +1,10 @@
-# Ante AI
+# Hedj
 
 Sports betting odds movement tracking feed.
 
 ## Overview
 
-Ante AI automatically collects sports betting odds, tracks line and price movements over time, and generates machine-readable data feeds. This helps bettors and analysts identify sharp money, steam moves, and value opportunities.
+Hedj automatically collects sports betting odds, tracks line and price movements over time, and generates machine-readable data feeds. This helps bettors and analysts identify sharp money, steam moves, and value opportunities.
 
 ## Features
 
@@ -30,8 +30,8 @@ Ante AI automatically collects sports betting odds, tracks line and price moveme
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/ante-ai.git
-cd ante-ai
+git clone https://github.com/yourusername/hedj.git
+cd hedj
 ```
 
 ### 2. Install dependencies
@@ -53,7 +53,7 @@ Edit `config.json` to add your API key (or leave as `"STUB"` for test data).
 ### 4. Run
 
 ```bash
-python -m ante_ai.cli --config config.json
+python -m hedj.cli --config config.json
 ```
 
 This will:
@@ -145,8 +145,8 @@ To enable:
 ## Project Structure
 
 ```
-ante-ai/
-├── ante_ai/
+hedj/
+├── hedj/
 │   ├── __init__.py
 │   ├── __main__.py
 │   ├── cli.py           # Command-line interface
@@ -175,7 +175,7 @@ ante-ai/
 ### Running with verbose output
 
 ```bash
-python -m ante_ai.cli --config config.json --verbose
+python -m hedj.cli --config config.json --verbose
 ```
 
 ### Using stub data

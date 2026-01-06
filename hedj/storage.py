@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from ante_ai.models import EventOdds, LatestOddsRow, OddsRow, PlayerPropOdds, PlayerPropRow
+from hedj.models import EventOdds, LatestOddsRow, OddsRow, PlayerPropOdds, PlayerPropRow
 
 logger = logging.getLogger(__name__)
 

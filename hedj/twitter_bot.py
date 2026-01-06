@@ -147,7 +147,7 @@ def format_movement_tweet(movement: dict) -> str:
 
     lines.extend([
         f"",
-        f"🔗 ante-ai.vercel.app",
+        f"🔗 hedj.io",
     ])
 
     return "\n".join(lines)
@@ -179,7 +179,7 @@ def format_daily_recap(movements: list[dict]) -> Optional[str]:
         f"🔥 Biggest: {biggest['event']}",
         f"   {biggest['movement_desc']}",
         "",
-        "🔗 Full details: ante-ai.vercel.app",
+        "🔗 Full details: hedj.io",
     ])
 
     return "\n".join(lines)
@@ -266,7 +266,7 @@ def run_alerts(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Ante AI Twitter Bot")
+    parser = argparse.ArgumentParser(description="Hedj Twitter Bot")
     parser.add_argument("--dry-run", action="store_true", help="Print tweets without posting")
     parser.add_argument("--recap", action="store_true", help="Post daily recap only")
     parser.add_argument("--test", action="store_true", help="Post a test tweet")
@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
     if args.test:
         client = get_twitter_client()
-        test_tweet = "🎯 Ante AI is live! Tracking line movements across NFL & NBA.\n\n🔗 ante-ai.vercel.app"
+        test_tweet = "🎯 Hedj is live! Tracking line movements across NFL & NBA.\n\n🔗 hedj.io"
         print(f"Posting test tweet:\n{test_tweet}")
         post_tweet(client, test_tweet)
     else:

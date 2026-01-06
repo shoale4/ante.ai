@@ -1,4 +1,4 @@
-# Ante AI Roadmap
+# Hedj Roadmap
 
 ## Completed Features
 - [x] Filter out yesterday's games (only show today + future)
@@ -171,7 +171,7 @@ With 20k requests, you can update all sports every 15 minutes during game days.
 - Pro teasers: `web/components/ProTeaser.tsx`
 - Main page: `web/app/page.tsx`
 - Arbitrage logic: `web/lib/arbitrage.ts`
-- Twitter bot: `ante_ai/twitter_bot.py`
+- Twitter bot: `hedj/twitter_bot.py`
 - GitHub Actions: `.github/workflows/`
 
 ### Environment Variables Needed

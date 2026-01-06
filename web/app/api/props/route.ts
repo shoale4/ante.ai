@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Player props from GitHub
 const GITHUB_PROPS_URL =
-  "https://raw.githubusercontent.com/shoale4/ante.ai/main/data/latest/props_latest.csv";
+  "https://raw.githubusercontent.com/shoale4/hedj/main/data/latest/props_latest.csv";
 
 interface RawPropData {
   timestamp_utc: string;

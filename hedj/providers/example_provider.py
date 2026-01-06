@@ -10,8 +10,8 @@ from typing import Any, List, Optional
 
 import requests
 
-from ante_ai.models import EventOdds, MarketOdds, OutcomeOdds, PlayerPropOdds
-from ante_ai.providers.base import OddsProvider
+from hedj.models import EventOdds, MarketOdds, OutcomeOdds, PlayerPropOdds
+from hedj.providers.base import OddsProvider
 
 logger = logging.getLogger(__name__)
 
