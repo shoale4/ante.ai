@@ -13,7 +13,7 @@ const SPORT_EMOJI: Record<Sport, string> = {
   Soccer: "⚽",
 };
 
-const FREE_ARB_LIMIT = 2;
+const FREE_ARB_LIMIT = 4;
 
 interface Props {
   games: GameOdds[];
