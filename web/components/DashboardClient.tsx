@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { GameOdds, LineMovement, Sport } from "@/lib/types";
 import { NewsItem } from "@/lib/news";
 import { GameWeather } from "@/lib/weather";
 import { WaitlistModal, useWaitlistModal } from "@/components/WaitlistModal";
 import { RedeemCodeModal, useRedeemModal } from "@/components/RedeemCodeModal";
+import { FloatingContextBar } from "@/components/FloatingContextBar";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 import { usePro } from "@/lib/pro-context";
 
@@ -53,12 +54,25 @@ function formatOdds(odds: number): string {
 }
 
 export function DashboardClient({ games, movements, news }: Props) {
+  const [globalSport, setGlobalSport] = useState<Sport | "all">("all");
   const waitlistModal = useWaitlistModal();
   const redeemModal = useRedeemModal();
   const { isPro } = usePro();
 
   // Calculate all arbs
   const allArbs = useMemo(() => findAllArbitrage(games), [games]);
+
+  // Calculate arb count (for FloatingContextBar)
+  const arbCount = useMemo(() => {
+    if (globalSport === "all") return allArbs.length;
+    return allArbs.filter((a) => a.sport === globalSport).length;
+  }, [allArbs, globalSport]);
+
+  // Calculate game count (for FloatingContextBar)
+  const gameCount = useMemo(() => {
+    if (globalSport === "all") return games.length;
+    return games.filter((g) => g.sport === globalSport).length;
+  }, [games, globalSport]);
 
   // Get unique sportsbooks
   const bookCount = useMemo(() => {
@@ -484,6 +498,14 @@ export function DashboardClient({ games, movements, news }: Props) {
       <RedeemCodeModal
         isOpen={redeemModal.isOpen}
         onClose={redeemModal.close}
+      />
+
+      {/* Floating Context Bar - Mobile Only */}
+      <FloatingContextBar
+        arbCount={arbCount}
+        gameCount={gameCount}
+        selectedSport={globalSport}
+        onSportChange={setGlobalSport}
       />
     </>
   );
