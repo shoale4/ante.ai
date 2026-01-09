@@ -5,11 +5,18 @@ const INVITE_PREFIX = "invite:";
 const REDEMPTION_PREFIX = "redemption:";
 
 interface InviteCode {
+  type?: "single" | "promo";
   createdAt: string;
   createdBy: string;
+  // Single-use fields
   usedAt?: string;
   usedBy?: string;
   usedByEmail?: string;
+  // Promo code fields
+  expiresAt?: string;
+  maxUses?: number;
+  useCount?: number;
+  redeemedEmails?: string; // JSON array stored as string
 }
 
 export async function POST(request: NextRequest) {
@@ -45,8 +52,13 @@ export async function POST(request: NextRequest) {
     // Check if KV is configured
     if (!process.env.KV_REST_API_URL) {
       console.log(`[Redeem] KV not configured. Code: ${normalizedCode}, Email: ${normalizedEmail}`);
-      // In dev without KV, accept TEST codes or valid HEDJ format
-      if (normalizedCode.startsWith("TEST") || /^HEDJ-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalizedCode)) {
+      // In dev without KV, accept TEST codes, promo-style codes, or valid HEDJ format
+      if (
+        normalizedCode.startsWith("TEST") ||
+        normalizedCode.startsWith("LAUNCH") ||
+        normalizedCode.startsWith("BETA") ||
+        /^HEDJ-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalizedCode)
+      ) {
         return NextResponse.json({
           success: true,
           message: "Pro access unlocked!",
@@ -68,6 +80,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle promo codes
+    if (invite.type === "promo") {
+      // Check if expired
+      if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+        return NextResponse.json(
+          { error: "This promo code has expired" },
+          { status: 400 }
+        );
+      }
+
+      // Check if max uses reached
+      const currentUses = invite.useCount || 0;
+      if (invite.maxUses && currentUses >= invite.maxUses) {
+        return NextResponse.json(
+          { error: "This promo code has reached its maximum uses" },
+          { status: 400 }
+        );
+      }
+
+      // Check if this email already used this promo code
+      const redeemedEmails: string[] = invite.redeemedEmails
+        ? JSON.parse(invite.redeemedEmails)
+        : [];
+
+      if (redeemedEmails.includes(normalizedEmail)) {
+        // Already redeemed - still success (they have access)
+        return NextResponse.json({
+          success: true,
+          message: "You already have Pro access with this code!",
+        });
+      }
+
+      // Add email to redeemed list and increment count
+      redeemedEmails.push(normalizedEmail);
+      await kv.hset(`${INVITE_PREFIX}${normalizedCode}`, {
+        ...invite,
+        useCount: currentUses + 1,
+        redeemedEmails: JSON.stringify(redeemedEmails),
+      });
+
+      // Create redemption record for this email
+      await kv.hset(`${REDEMPTION_PREFIX}${normalizedEmail}`, {
+        code: normalizedCode,
+        type: "promo",
+        redeemedAt: new Date().toISOString(),
+      });
+
+      console.log(`[Redeem] Promo code redeemed: ${normalizedCode} by ${normalizedEmail} (use #${currentUses + 1})`);
+
+      return NextResponse.json({
+        success: true,
+        message: "Pro access unlocked! Enjoy unlimited arbitrage opportunities.",
+      });
+    }
+
+    // Handle single-use codes (original logic)
     // Check if already used
     if (invite.usedAt) {
       return NextResponse.json(
@@ -79,6 +147,7 @@ export async function POST(request: NextRequest) {
     // Mark as used with email
     await kv.hset(`${INVITE_PREFIX}${normalizedCode}`, {
       ...invite,
+      type: "single",
       usedAt: new Date().toISOString(),
       usedBy: normalizedEmail,
       usedByEmail: normalizedEmail,
@@ -87,10 +156,11 @@ export async function POST(request: NextRequest) {
     // Also create a redemption record for the email (for analytics/lookup)
     await kv.hset(`${REDEMPTION_PREFIX}${normalizedEmail}`, {
       code: normalizedCode,
+      type: "single",
       redeemedAt: new Date().toISOString(),
     });
 
-    console.log(`[Redeem] Code redeemed: ${normalizedCode} by ${normalizedEmail}`);
+    console.log(`[Redeem] Single-use code redeemed: ${normalizedCode} by ${normalizedEmail}`);
 
     return NextResponse.json({
       success: true,
