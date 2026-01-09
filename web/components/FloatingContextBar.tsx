@@ -72,9 +72,7 @@ export function FloatingContextBar({
   // Handle "View Arbs" action based on current page
   const handleViewArbs = () => {
     setIsExpanded(false);
-    if (pathname === "/") {
-      document.getElementById("arb-section")?.scrollIntoView({ behavior: "smooth" });
-    } else if (pathname === "/arbitrage") {
+    if (pathname === "/arbitrage") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       router.push("/arbitrage");
@@ -84,9 +82,7 @@ export function FloatingContextBar({
   // Handle "All Games" action based on current page
   const handleAllGames = () => {
     setIsExpanded(false);
-    if (pathname === "/") {
-      document.getElementById("feed-section")?.scrollIntoView({ behavior: "smooth" });
-    } else if (pathname === "/feed") {
+    if (pathname === "/feed") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       router.push("/feed");
