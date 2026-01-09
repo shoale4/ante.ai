@@ -101,9 +101,19 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if this email already used this promo code
-      const redeemedEmails: string[] = invite.redeemedEmails
-        ? JSON.parse(String(invite.redeemedEmails))
-        : [];
+      // KV might return as string or already parsed array
+      let redeemedEmails: string[] = [];
+      if (invite.redeemedEmails) {
+        if (Array.isArray(invite.redeemedEmails)) {
+          redeemedEmails = invite.redeemedEmails;
+        } else {
+          try {
+            redeemedEmails = JSON.parse(String(invite.redeemedEmails));
+          } catch {
+            redeemedEmails = [];
+          }
+        }
+      }
 
       if (redeemedEmails.includes(normalizedEmail)) {
         // Already redeemed - still success (they have access)
