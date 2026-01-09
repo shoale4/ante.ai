@@ -18,9 +18,10 @@ const FREE_ARB_LIMIT = 4;
 interface Props {
   games: GameOdds[];
   onWaitlist?: () => void;
+  isPro?: boolean;
 }
 
-export function ArbitrageFinder({ games, onWaitlist }: Props) {
+export function ArbitrageFinder({ games, onWaitlist, isPro = false }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const allOpportunities = useMemo(() => {
@@ -30,9 +31,13 @@ export function ArbitrageFinder({ games, onWaitlist }: Props) {
 
   const topProfit = allOpportunities[0]?.profit || 0;
 
-  // Free users see the lowest-profit arbs, best ones are locked
-  const freeArbs = allOpportunities.slice(-FREE_ARB_LIMIT).reverse();
-  const lockedArbs = allOpportunities.slice(0, Math.max(0, allOpportunities.length - FREE_ARB_LIMIT));
+  // Pro users see all arbs, free users see limited
+  const freeArbs = isPro
+    ? allOpportunities
+    : allOpportunities.slice(-FREE_ARB_LIMIT).reverse();
+  const lockedArbs = isPro
+    ? []
+    : allOpportunities.slice(0, Math.max(0, allOpportunities.length - FREE_ARB_LIMIT));
   const bestLockedProfit = lockedArbs[0]?.profit || 0;
 
   return (
@@ -131,12 +136,14 @@ export function ArbitrageFinder({ games, onWaitlist }: Props) {
             </div>
           )}
 
-          {/* Free opportunities */}
+          {/* Free opportunities (or all for Pro) */}
           {freeArbs.length > 0 && (
             <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-              <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
-                <span className="text-[10px] font-medium text-gray-500 uppercase">Free Opportunities</span>
-              </div>
+              {!isPro && (
+                <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+                  <span className="text-[10px] font-medium text-gray-500 uppercase">Free Opportunities</span>
+                </div>
+              )}
               <div className="divide-y divide-gray-100">
                 {freeArbs.map((opp, idx) => (
                   <FreeArbRow
