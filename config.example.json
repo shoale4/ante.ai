@@ -5,11 +5,34 @@
     "api_key": "YOUR_API_KEY",
     "regions": ["us"],
     "books": ["fanduel", "draftkings", "betmgm", "caesars", "pointsbetus", "bet365", "betonlineag"],
-    "sports": ["americanfootball_nfl", "basketball_nba"]
+    "sports": [
+      "americanfootball_nfl",
+      "basketball_nba",
+      "icehockey_nhl",
+      "soccer_epl",
+      "soccer_spain_la_liga",
+      "soccer_uefa_champs_league"
+    ],
+    "player_prop_markets": [
+      "player_points",
+      "player_rebounds",
+      "player_assists",
+      "player_threes",
+      "player_pass_yds",
+      "player_pass_tds",
+      "player_rush_yds",
+      "player_receptions",
+      "player_reception_yds",
+      "player_goals",
+      "player_shots_on_goal",
+      "player_power_play_points"
+    ]
   },
   "storage": {
     "history_path": "data/history/odds_history.csv",
     "latest_path": "data/latest/latest.csv",
+    "props_history_path": "data/history/props_history.csv",
+    "props_latest_path": "data/latest/props_latest.csv",
     "raw_directory": "data/raw"
   }
 }

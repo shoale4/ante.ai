@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
     // Check if KV is configured
     if (!process.env.KV_REST_API_URL) {
       console.log(`[Redeem] KV not configured. Code: ${normalizedCode}`);
-      // In dev without KV, accept any code starting with "TEST"
-      if (normalizedCode.startsWith("TEST")) {
+      // In dev without KV, accept TEST codes or valid HEDJ format
+      if (normalizedCode.startsWith("TEST") || /^HEDJ-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalizedCode)) {
         return NextResponse.json({
           success: true,
           message: "Pro access unlocked!",

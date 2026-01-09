@@ -1,9 +1,9 @@
-name: Update Odds Feed
+name: Update Player Props
 
 on:
   schedule:
-    # Run every 30 minutes for real-time arbitrage detection
-    - cron: "*/30 * * * *"
+    # Run every 6 hours for player props (less frequent to save API credits)
+    - cron: "0 */6 * * *"
   workflow_dispatch:
     # Allow manual triggers
 
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  update-feed:
+  update-props:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,19 +35,19 @@ jobs:
             sed -i 's/"api_key": "YOUR_API_KEY"/"api_key": "${{ secrets.ODDS_API_KEY }}"/' config.json
           fi
 
-      - name: Run odds feed update
-        run: python -m hedj.cli --config config.json
+      - name: Run player props update
+        run: python -m hedj.cli --config config.json --props
 
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          git add data/history/odds_history.csv data/latest/latest.csv
+          git add data/history/props_history.csv data/latest/props_latest.csv || true
 
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update odds feed - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git commit -m "Update player props - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             git push
           fi
