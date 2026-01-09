@@ -73,16 +73,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const invite: InviteCode = {
+      const invite: Record<string, string | number> = {
         type: "promo",
         createdAt: new Date().toISOString(),
         createdBy,
-        expiresAt: expiresAt || undefined,
-        maxUses: maxUses || undefined,
         useCount: 0,
         redeemedEmails: JSON.stringify([]),
       };
-      await kv.hset(`${INVITE_PREFIX}${promoCode}`, { ...invite });
+      // Only add optional fields if they have values
+      if (expiresAt) invite.expiresAt = expiresAt;
+      if (maxUses) invite.maxUses = maxUses;
+
+      await kv.hset(`${INVITE_PREFIX}${promoCode}`, invite);
 
       console.log(`[Admin] Created promo code ${promoCode} by ${createdBy}`);
 
