@@ -109,6 +109,9 @@ class OddsStorage:
             logger.info("No history data available for latest snapshot")
             return 0
 
+        # Use current time as the refresh timestamp
+        refresh_time = datetime.now(timezone.utc).isoformat()
+
         # Group by unique key: (book, sport, event_id, market_type, outcome)
         grouped: Dict[Tuple, List[dict]] = defaultdict(list)
         for record in history:
@@ -158,7 +161,7 @@ class OddsStorage:
                 opening_line=opening_line,
                 current_line=current_line,
                 line_movement=line_movement,
-                last_updated=last["timestamp_utc"],
+                last_updated=refresh_time,
             )
             latest_rows.append(latest_row)
 
