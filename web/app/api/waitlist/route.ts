@@ -1,28 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { kv } from "@vercel/kv";
 
-const WAITLIST_FILE = path.join(process.cwd(), "data", "waitlist.json");
+const WAITLIST_KEY = "waitlist:emails";
 
 interface WaitlistEntry {
   email: string;
   timestamp: string;
   source: string;
-}
-
-async function getWaitlist(): Promise<WaitlistEntry[]> {
-  try {
-    const data = await fs.readFile(WAITLIST_FILE, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function saveWaitlist(entries: WaitlistEntry[]): Promise<void> {
-  const dir = path.dirname(WAITLIST_FILE);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(WAITLIST_FILE, JSON.stringify(entries, null, 2));
 }
 
 export async function POST(request: NextRequest) {
@@ -39,25 +23,34 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Get existing waitlist
-    const waitlist = await getWaitlist();
+    // Check if KV is configured
+    if (!process.env.KV_REST_API_URL) {
+      console.log(`[Waitlist] KV not configured. Would add: ${normalizedEmail}`);
+      return NextResponse.json(
+        { message: "You're on the list! We'll notify you when Pro launches.", success: true },
+        { status: 200 }
+      );
+    }
 
     // Check for duplicate
-    if (waitlist.some((entry) => entry.email === normalizedEmail)) {
+    const exists = await kv.sismember(WAITLIST_KEY, normalizedEmail);
+    if (exists) {
       return NextResponse.json(
         { message: "You're already on the waitlist!", alreadyExists: true },
         { status: 200 }
       );
     }
 
-    // Add new entry
-    waitlist.push({
+    // Add to set (deduped automatically)
+    await kv.sadd(WAITLIST_KEY, normalizedEmail);
+
+    // Store full entry with metadata
+    const entry: WaitlistEntry = {
       email: normalizedEmail,
       timestamp: new Date().toISOString(),
       source,
-    });
-
-    await saveWaitlist(waitlist);
+    };
+    await kv.hset(`waitlist:entry:${normalizedEmail}`, entry);
 
     console.log(`[Waitlist] New signup: ${normalizedEmail} from ${source}`);
 
@@ -75,11 +68,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  // Simple endpoint to check waitlist count (could be protected in production)
   try {
-    const waitlist = await getWaitlist();
-    return NextResponse.json({ count: waitlist.length });
-  } catch {
-    return NextResponse.json({ count: 0 });
+    // Check if KV is configured
+    if (!process.env.KV_REST_API_URL) {
+      return NextResponse.json({ count: 0, configured: false });
+    }
+
+    const count = await kv.scard(WAITLIST_KEY);
+    return NextResponse.json({ count, configured: true });
+  } catch (error) {
+    console.error("[Waitlist] Error getting count:", error);
+    return NextResponse.json({ count: 0, error: true });
   }
 }
