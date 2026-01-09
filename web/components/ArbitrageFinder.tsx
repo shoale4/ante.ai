@@ -249,10 +249,63 @@ function CompactArbRow({
 
 // Shared bet details component
 function BetDetails({ opportunity, compact }: { opportunity: ArbitrageOpportunity; compact?: boolean }) {
+  const [stake, setStake] = useState(100);
+  const multiplier = stake / 100;
+
+  const handleStakeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value) && value >= 0) {
+      setStake(value);
+    } else if (e.target.value === '') {
+      setStake(0);
+    }
+  };
+
+  const presets = compact ? [50, 100, 250] : [50, 100, 250, 500, 1000];
+  const profit = (opportunity.profit / 100) * stake;
+  const totalReturn = stake + profit;
+
   return (
     <div className={`border-t border-gray-100 bg-gray-50 ${compact ? 'p-2' : 'p-3'}`}>
+      {/* Stake Input */}
+      <div className={`${compact ? 'mb-2' : 'mb-3'}`}>
+        <label className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-medium text-gray-500 uppercase block mb-1.5`}>
+          Total Stake
+        </label>
+        <div className="relative">
+          <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${compact ? 'text-sm' : 'text-base'} text-gray-400 font-medium`}>$</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="any"
+            value={stake || ''}
+            onChange={handleStakeChange}
+            placeholder="100"
+            className={`w-full ${compact ? 'pl-6 pr-3 py-2.5 text-base' : 'pl-7 pr-3 py-3 text-lg'} bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent font-semibold text-gray-900`}
+          />
+        </div>
+        {/* Quick presets */}
+        <div className={`flex gap-1.5 ${compact ? 'mt-1.5' : 'mt-2'}`}>
+          {presets.map((amount) => (
+            <button
+              key={amount}
+              onClick={() => setStake(amount)}
+              className={`flex-1 ${compact ? 'py-1.5 text-[10px]' : 'py-2 text-xs'} font-medium rounded-lg transition-colors ${
+                stake === amount
+                  ? 'bg-green-500 text-white'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100'
+              }`}
+            >
+              ${amount}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bet Breakdown */}
       <div className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-medium text-gray-500 uppercase mb-1.5`}>
-        Bets for $100
+        Bet Amounts
       </div>
       <div className={`${compact ? 'space-y-1' : 'space-y-1.5'}`}>
         {opportunity.legs.map((leg, idx) => (
@@ -262,15 +315,40 @@ function BetDetails({ opportunity, compact }: { opportunity: ArbitrageOpportunit
               <div className={`${compact ? 'text-[9px]' : 'text-[10px]'} text-gray-500`}>{leg.book}</div>
             </div>
             <div className="text-right">
-              <div className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-gray-900`}>${leg.stake.toFixed(2)}</div>
+              <div className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-gray-900`}>${(leg.stake * multiplier).toFixed(2)}</div>
               <div className={`${compact ? 'text-[9px]' : 'text-[10px]'} text-gray-500`}>@ {leg.odds > 0 ? `+${leg.odds}` : leg.odds}</div>
             </div>
           </div>
         ))}
       </div>
-      <div className={`${compact ? 'mt-1.5 pt-1.5' : 'mt-2 pt-2'} border-t border-gray-200 flex items-center justify-between`}>
-        <span className={`${compact ? 'text-[9px]' : 'text-[11px]'} text-gray-500`}>Return</span>
-        <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-green-600`}>${(100 + opportunity.profit).toFixed(2)}</span>
+
+      {/* Profit Summary */}
+      <div className={`${compact ? 'mt-2 pt-2' : 'mt-3 pt-3'} border-t border-gray-200 space-y-1`}>
+        <div className="flex items-center justify-between">
+          <span className={`${compact ? 'text-[9px]' : 'text-[11px]'} text-gray-500`}>Profit</span>
+          <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-green-600`}>+${profit.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={`${compact ? 'text-[9px]' : 'text-[11px]'} text-gray-500`}>Total Return</span>
+          <span className={`${compact ? 'text-[11px]' : 'text-sm'} font-bold text-green-600`}>${totalReturn.toFixed(2)}</span>
+        </div>
+      </div>
+
+      {/* Share Button */}
+      <div className={`${compact ? 'mt-2 pt-2' : 'mt-3 pt-3'} border-t border-gray-200`}>
+        <button
+          onClick={() => {
+            const text = `🔥 ${opportunity.profit.toFixed(1)}% arb on ${opportunity.awayTeam} @ ${opportunity.homeTeam}\n\n${opportunity.legs.map(l => `${l.side} @ ${l.book} (${l.odds > 0 ? '+' : ''}${l.odds})`).join('\n')}\n\nFound on hedj.app`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank', 'width=550,height=420');
+          }}
+          className={`w-full flex items-center justify-center gap-2 ${compact ? 'py-2 text-[10px]' : 'py-2.5 text-xs'} font-medium rounded-lg bg-black text-white hover:bg-gray-800 active:scale-[0.98] transition-all`}
+        >
+          <svg className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
+          Share on X
+        </button>
       </div>
     </div>
   );

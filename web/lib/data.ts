@@ -97,6 +97,36 @@ function parseCSVLine(line: string): string[] {
   return values;
 }
 
+// Get the most recent update timestamp from the data
+export async function getLastUpdated(): Promise<string | null> {
+  const odds = await getLatestOdds();
+  if (odds.length === 0) return null;
+
+  // Find the most recent lastUpdated timestamp
+  let mostRecent: Date | null = null;
+  for (const snapshot of odds) {
+    if (snapshot.lastUpdated) {
+      try {
+        const date = new Date(snapshot.lastUpdated);
+        // Validate the date is valid
+        if (!isNaN(date.getTime()) && (!mostRecent || date > mostRecent)) {
+          mostRecent = date;
+        }
+      } catch {
+        // Skip invalid dates
+      }
+    }
+  }
+
+  if (!mostRecent) return null;
+
+  try {
+    return mostRecent.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 export async function getGameOdds(): Promise<GameOdds[]> {
   const odds = await getLatestOdds();
 

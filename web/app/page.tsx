@@ -1,16 +1,18 @@
-import { getGameOdds, getLineMovements } from "@/lib/data";
+import { getGameOdds, getLineMovements, getLastUpdated } from "@/lib/data";
 import { fetchAllNews } from "@/lib/news-sources";
 import { getWeatherForGames, GameWeather } from "@/lib/weather";
 import { ArbitrageBadge } from "@/components/ArbitrageFinder";
 import { HomeClient } from "@/components/HomeClient";
+import { LastUpdated } from "@/components/LastUpdated";
 
 export const revalidate = 300; // Revalidate every 5 minutes
 
 export default async function Home() {
-  const [games, movements, news] = await Promise.all([
+  const [games, movements, news, lastUpdated] = await Promise.all([
     getGameOdds(),
     getLineMovements(),
     fetchAllNews(),
+    getLastUpdated(),
   ]);
 
   const nflGames = games.filter((g) => g.sport === "NFL");
@@ -61,7 +63,8 @@ export default async function Home() {
               <span className="pill pill-green">
                 {games.length} games
               </span>
-              <span className="relative flex h-3 w-3 ml-2">
+              <LastUpdated timestamp={lastUpdated} />
+              <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
@@ -69,6 +72,7 @@ export default async function Home() {
             {/* Mobile badges - simplified */}
             <div className="flex sm:hidden items-center gap-1.5">
               <ArbitrageBadge games={games} />
+              <LastUpdated timestamp={lastUpdated} />
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
