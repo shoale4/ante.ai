@@ -6,6 +6,7 @@ import { LineMovementChart } from "./LineMovementChart";
 import { PlayerPropsSection } from "./PlayerPropsSection";
 import { BookName } from "./BookLink";
 import { calculateHold } from "@/lib/arbitrage";
+import { usePro } from "@/lib/pro-context";
 
 interface Props {
   game: GameOdds;
@@ -26,6 +27,7 @@ const tabs: { id: TabType; label: string }[] = [
 
 export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>("odds");
+  const { isPro } = usePro();
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -164,7 +166,7 @@ export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
           )}
 
           {activeTab === "props" && (
-            <PlayerPropsSection eventId={game.eventId} onWaitlist={onWaitlist} />
+            <PlayerPropsSection eventId={game.eventId} isPro={isPro} onWaitlist={onWaitlist} />
           )}
         </div>
       </div>
