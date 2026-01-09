@@ -8,6 +8,7 @@ import { GameWeather } from "@/lib/weather";
 import { WaitlistModal, useWaitlistModal } from "@/components/WaitlistModal";
 import { RedeemCodeModal, useRedeemModal } from "@/components/RedeemCodeModal";
 import { FloatingContextBar } from "@/components/FloatingContextBar";
+import { BookLeaderboard } from "@/components/BookLeaderboard";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 import { usePro } from "@/lib/pro-context";
 
@@ -273,6 +274,9 @@ export function DashboardClient({ games, movements, news }: Props) {
             </div>
           </div>
         )}
+
+        {/* Best Books Leaderboard */}
+        <BookLeaderboard games={games} />
 
         {/* Activity Feed */}
         <div className="glass-card p-4">
