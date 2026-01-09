@@ -157,8 +157,10 @@ export async function GET(request: NextRequest) {
         // Determine status based on code type
         let status = "available";
         if (details?.type === "promo") {
-          const isExpired = details.expiresAt && new Date(details.expiresAt) < new Date();
-          const isMaxedOut = details.maxUses && (details.useCount || 0) >= details.maxUses;
+          const isExpired = details.expiresAt && new Date(String(details.expiresAt)) < new Date();
+          const useCount = parseInt(String(details.useCount || 0), 10);
+          const maxUses = details.maxUses ? parseInt(String(details.maxUses), 10) : null;
+          const isMaxedOut = maxUses && useCount >= maxUses;
           if (isExpired) status = "expired";
           else if (isMaxedOut) status = "maxed";
           else status = "active";
@@ -166,12 +168,21 @@ export async function GET(request: NextRequest) {
           status = details?.usedAt ? "used" : "available";
         }
 
+        // Safely parse redeemed emails
+        let redeemedEmailsList: string[] | undefined;
+        if (details?.redeemedEmails) {
+          try {
+            redeemedEmailsList = JSON.parse(String(details.redeemedEmails));
+          } catch {
+            redeemedEmailsList = [];
+          }
+        }
+
         return {
           code,
           ...details,
           status,
-          // Parse redeemed emails for display
-          redeemedEmailsList: details?.redeemedEmails ? JSON.parse(details.redeemedEmails) : undefined,
+          redeemedEmailsList,
         };
       })
     );
