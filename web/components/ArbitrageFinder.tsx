@@ -13,14 +13,15 @@ const SPORT_EMOJI: Record<Sport, string> = {
   Soccer: "⚽",
 };
 
+const FREE_ARB_LIMIT = 2;
+
 interface Props {
   games: GameOdds[];
   onWaitlist?: () => void;
 }
 
-export function ArbitrageFinder({ games }: Props) {
+export function ArbitrageFinder({ games, onWaitlist }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [showMore, setShowMore] = useState(false);
 
   const allOpportunities = useMemo(() => {
     const opps = findAllArbitrage(games);
@@ -28,8 +29,11 @@ export function ArbitrageFinder({ games }: Props) {
   }, [games]);
 
   const topProfit = allOpportunities[0]?.profit || 0;
-  const featured = allOpportunities.slice(0, 3);
-  const remaining = allOpportunities.slice(3);
+
+  // Free users see the lowest-profit arbs, best ones are locked
+  const freeArbs = allOpportunities.slice(-FREE_ARB_LIMIT).reverse();
+  const lockedArbs = allOpportunities.slice(0, Math.max(0, allOpportunities.length - FREE_ARB_LIMIT));
+  const bestLockedProfit = lockedArbs[0]?.profit || 0;
 
   return (
     <div className="space-y-3">
@@ -74,56 +78,77 @@ export function ArbitrageFinder({ games }: Props) {
 
       {/* Content */}
       {allOpportunities.length > 0 ? (
-        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-          {/* Featured opportunities */}
-          <div className="divide-y divide-gray-100">
-            {featured.map((opp, idx) => (
-              <FeaturedArbRow
-                key={`${opp.gameId}-${opp.market}`}
-                opportunity={opp}
-                rank={idx + 1}
-                isExpanded={expandedId === `${opp.gameId}-${opp.market}`}
-                onToggle={() => setExpandedId(
-                  expandedId === `${opp.gameId}-${opp.market}` ? null : `${opp.gameId}-${opp.market}`
-                )}
-              />
-            ))}
-          </div>
-
-          {/* More opportunities section */}
-          {remaining.length > 0 && (
-            <div className="border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={() => setShowMore(!showMore)}
-                className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors"
-              >
-                <span className="text-xs font-medium text-gray-600">
-                  {remaining.length} more opportunities
-                </span>
-                <svg
-                  className={`w-4 h-4 text-gray-400 transition-transform ${showMore ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {showMore && (
-                <div className="px-3 pb-3 space-y-1.5">
-                  {remaining.map((opp) => (
-                    <CompactArbRow
-                      key={`${opp.gameId}-${opp.market}`}
-                      opportunity={opp}
-                      isExpanded={expandedId === `${opp.gameId}-${opp.market}`}
-                      onToggle={() => setExpandedId(
-                        expandedId === `${opp.gameId}-${opp.market}` ? null : `${opp.gameId}-${opp.market}`
-                      )}
-                    />
-                  ))}
+        <div className="space-y-3">
+          {/* Locked/Pro section - Best opportunities */}
+          {lockedArbs.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden">
+              <div className="px-3 py-3 border-b border-amber-200/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-orange-500 text-[9px] font-bold text-black uppercase">
+                      Pro
+                    </span>
+                    <span className="text-xs font-semibold text-gray-900">
+                      {lockedArbs.length} Better {lockedArbs.length === 1 ? "Opportunity" : "Opportunities"}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-amber-600">
+                    up to +{bestLockedProfit.toFixed(1)}%
+                  </span>
                 </div>
-              )}
+              </div>
+
+              {/* Blurred preview of best arb */}
+              <div className="relative">
+                <div className="px-3 py-3 blur-[6px] select-none pointer-events-none">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">🥇</span>
+                    <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <span className="text-xs">{SPORT_EMOJI[lockedArbs[0].sport as Sport] || "🏆"}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[13px] font-semibold text-gray-900">
+                        {lockedArbs[0].awayTeam.split(" ").pop()} @ {lockedArbs[0].homeTeam.split(" ").pop()}
+                      </div>
+                      <div className="text-[10px] text-gray-500 capitalize">{lockedArbs[0].market}</div>
+                    </div>
+                    <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500">
+                      <span className="text-xs font-bold text-white">+{lockedArbs[0].profit.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overlay CTA */}
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-amber-50/90 to-transparent">
+                  <button
+                    onClick={onWaitlist}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold text-xs hover:from-amber-300 hover:to-orange-400 active:scale-95 transition-all shadow-lg shadow-amber-500/25"
+                  >
+                    Unlock with Pro
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Free opportunities */}
+          {freeArbs.length > 0 && (
+            <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+              <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <span className="text-[10px] font-medium text-gray-500 uppercase">Free Opportunities</span>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {freeArbs.map((opp, idx) => (
+                  <FreeArbRow
+                    key={`${opp.gameId}-${opp.market}`}
+                    opportunity={opp}
+                    isExpanded={expandedId === `${opp.gameId}-${opp.market}`}
+                    onToggle={() => setExpandedId(
+                      expandedId === `${opp.gameId}-${opp.market}` ? null : `${opp.gameId}-${opp.market}`
+                    )}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -157,27 +182,22 @@ function formatGameTime(dateStr: string): string {
   return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) + ` ${timeStr}`;
 }
 
-// Featured row with medal ranking
-function FeaturedArbRow({
+// Free arb row (no medal, full details)
+function FreeArbRow({
   opportunity,
-  rank,
   isExpanded,
   onToggle
 }: {
   opportunity: ArbitrageOpportunity;
-  rank: number;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const medals = ["🥇", "🥈", "🥉"];
-
   return (
     <div>
       <button
         onClick={onToggle}
         className="w-full px-3 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
       >
-        <span className="text-lg">{medals[rank - 1]}</span>
         <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
           <span className="text-xs">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
         </div>
@@ -205,44 +225,6 @@ function FeaturedArbRow({
       </button>
 
       {isExpanded && <BetDetails opportunity={opportunity} />}
-    </div>
-  );
-}
-
-// Compact row for additional opportunities
-function CompactArbRow({
-  opportunity,
-  isExpanded,
-  onToggle
-}: {
-  opportunity: ArbitrageOpportunity;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full px-2.5 py-2 flex items-center gap-2 hover:bg-gray-50 transition-colors"
-      >
-        <span className="text-xs">{SPORT_EMOJI[opportunity.sport as Sport] || "🏆"}</span>
-        <div className="flex-1 min-w-0 text-left">
-          <div className="text-xs text-gray-900 truncate">
-            {opportunity.awayTeam.split(" ").pop()} @ {opportunity.homeTeam.split(" ").pop()}
-          </div>
-          <div className="text-[9px] text-gray-400">{formatGameTime(opportunity.eventStartTime)}</div>
-        </div>
-        <span className="text-xs font-bold text-green-600">+{opportunity.profit.toFixed(1)}%</span>
-        <svg
-          className={`w-3 h-3 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {isExpanded && <BetDetails opportunity={opportunity} compact />}
     </div>
   );
 }

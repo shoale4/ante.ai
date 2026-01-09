@@ -49,6 +49,9 @@ export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Pr
   const awayShort = shortenTeamName(game.awayTeam, game.sport);
   const homeShort = shortenTeamName(game.homeTeam, game.sport);
 
+  // Check for significant line movement (sharp money indicator)
+  const sharpMove = detectSharpMove(game);
+
   return (
     <>
       <div
@@ -69,6 +72,11 @@ export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Pr
             <span className="text-sm">{SPORT_EMOJI[game.sport as Sport] || "🏆"}</span>
             <span className="text-[10px] text-gray-400 font-medium">{game.sport}</span>
             {weather && <WeatherBadge weather={weather} compact />}
+            {sharpMove && (
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
+                {sharpMove.direction === "up" ? "📈" : "📉"} {sharpMove.label}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
@@ -96,11 +104,16 @@ export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Pr
               )}
             </div>
             {bestAwayML && (
-              <span className={`text-[13px] font-bold tabular-nums ${
-                bestAwayML.price > 0 ? "text-green-600" : "text-gray-900"
-              }`}>
-                {bestAwayML.price > 0 ? `+${bestAwayML.price}` : bestAwayML.price}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] text-gray-400 bg-gray-50 px-1 py-0.5 rounded">
+                  {formatBookName(bestAwayML.book)}
+                </span>
+                <span className={`text-[13px] font-bold tabular-nums ${
+                  bestAwayML.price > 0 ? "text-green-600" : "text-gray-900"
+                }`}>
+                  {bestAwayML.price > 0 ? `+${bestAwayML.price}` : bestAwayML.price}
+                </span>
+              </div>
             )}
           </div>
 
@@ -116,11 +129,16 @@ export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Pr
               )}
             </div>
             {bestHomeML && (
-              <span className={`text-[13px] font-bold tabular-nums ${
-                bestHomeML.price > 0 ? "text-green-600" : "text-gray-900"
-              }`}>
-                {bestHomeML.price > 0 ? `+${bestHomeML.price}` : bestHomeML.price}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] text-gray-400 bg-gray-50 px-1 py-0.5 rounded">
+                  {formatBookName(bestHomeML.book)}
+                </span>
+                <span className={`text-[13px] font-bold tabular-nums ${
+                  bestHomeML.price > 0 ? "text-green-600" : "text-gray-900"
+                }`}>
+                  {bestHomeML.price > 0 ? `+${bestHomeML.price}` : bestHomeML.price}
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -188,6 +206,60 @@ function findBest(odds: Array<{ book: string; currentPrice: number }>): { book: 
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+}
+
+// Format book name for display
+function formatBookName(book: string): string {
+  const bookNames: Record<string, string> = {
+    fanduel: "FD",
+    draftkings: "DK",
+    betmgm: "MGM",
+    caesars: "CZR",
+    pointsbet: "PB",
+    bet365: "365",
+    betonlineag: "BOL",
+    bovada: "BOV",
+    williamhill: "WH",
+    unibet: "UNI",
+  };
+  return bookNames[book.toLowerCase()] || book.slice(0, 3).toUpperCase();
+}
+
+// Detect significant line movement (sharp money indicator)
+function detectSharpMove(game: GameOdds): { direction: "up" | "down"; label: string } | null {
+  // Check spread movement (significant if moved 1+ points)
+  for (const odds of game.markets.spread) {
+    if (odds.lineMovement && Math.abs(odds.lineMovement) >= 1) {
+      const team = odds.outcome === "home" ? game.homeTeam.split(" ").pop() : game.awayTeam.split(" ").pop();
+      return {
+        direction: odds.lineMovement > 0 ? "up" : "down",
+        label: `${team} ${odds.lineMovement > 0 ? "+" : ""}${odds.lineMovement}`,
+      };
+    }
+  }
+
+  // Check total movement (significant if moved 1+ points)
+  for (const odds of game.markets.total) {
+    if (odds.lineMovement && Math.abs(odds.lineMovement) >= 1) {
+      return {
+        direction: odds.lineMovement > 0 ? "up" : "down",
+        label: `Total ${odds.lineMovement > 0 ? "+" : ""}${odds.lineMovement}`,
+      };
+    }
+  }
+
+  // Check moneyline movement (significant if moved 15+ cents)
+  for (const odds of game.markets.moneyline) {
+    if (Math.abs(odds.priceMovement) >= 15) {
+      const team = odds.outcome === "home" ? game.homeTeam.split(" ").pop() : game.awayTeam.split(" ").pop();
+      return {
+        direction: odds.priceMovement > 0 ? "up" : "down",
+        label: `${team} ML`,
+      };
+    }
+  }
+
+  return null;
 }
 
 // Smart team name shortening - handles soccer teams properly

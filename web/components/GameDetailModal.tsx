@@ -5,6 +5,7 @@ import { GameOdds } from "@/lib/types";
 import { LineMovementChart } from "./LineMovementChart";
 import { PlayerPropsSection } from "./PlayerPropsSection";
 import { BookName } from "./BookLink";
+import { calculateHold } from "@/lib/arbitrage";
 
 interface Props {
   game: GameOdds;
@@ -210,11 +211,25 @@ function CompactMarket({
   const shortHome = homeTeam.split(" ").pop() || homeTeam;
   const shortAway = awayTeam.split(" ").pop() || awayTeam;
 
+  // Calculate best hold (lowest vig using best odds from any book)
+  const bestHold = homeOdds.length > 0 && awayOdds.length > 0
+    ? calculateHold(bestHome, bestAway)
+    : null;
+
   return (
     <div className="bg-gray-50 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-gray-100">
+      <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
         <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{title}</span>
+        {bestHold !== null && (
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+            bestHold <= 2 ? "bg-green-100 text-green-700" :
+            bestHold <= 4 ? "bg-yellow-100 text-yellow-700" :
+            "bg-gray-100 text-gray-500"
+          }`}>
+            {bestHold <= 0 ? "0%" : `${bestHold.toFixed(1)}%`} hold
+          </span>
+        )}
       </div>
 
       {/* Table */}
@@ -283,14 +298,30 @@ function CompactTotal({
   const bestUnder = Math.max(...underOdds.map(o => o.currentPrice));
   const totalLine = overOdds[0]?.currentLine ?? underOdds[0]?.currentLine;
 
+  // Calculate best hold
+  const bestHold = overOdds.length > 0 && underOdds.length > 0
+    ? calculateHold(bestOver, bestUnder)
+    : null;
+
   return (
     <div className="bg-gray-50 rounded-xl overflow-hidden">
       {/* Header */}
       <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total</span>
-        {totalLine && (
-          <span className="text-xs font-bold text-gray-900 bg-white px-2 py-0.5 rounded-md border border-gray-200">
-            {totalLine}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total</span>
+          {totalLine && (
+            <span className="text-xs font-bold text-gray-900 bg-white px-2 py-0.5 rounded-md border border-gray-200">
+              {totalLine}
+            </span>
+          )}
+        </div>
+        {bestHold !== null && (
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+            bestHold <= 2 ? "bg-green-100 text-green-700" :
+            bestHold <= 4 ? "bg-yellow-100 text-yellow-700" :
+            "bg-gray-100 text-gray-500"
+          }`}>
+            {bestHold <= 0 ? "0%" : `${bestHold.toFixed(1)}%`} hold
           </span>
         )}
       </div>

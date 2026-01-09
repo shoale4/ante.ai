@@ -23,7 +23,7 @@ export interface ArbitrageLeg {
 }
 
 // Convert American odds to decimal odds
-function americanToDecimal(american: number): number {
+export function americanToDecimal(american: number): number {
   if (american > 0) {
     return 1 + american / 100;
   } else {
@@ -273,4 +273,50 @@ export function findPositiveEV(
   });
 
   return positiveEV.sort((a, b) => b.ev - a.ev);
+}
+
+// Calculate hold/vig percentage for a two-way market
+// Returns the percentage over 100% (e.g., 4.5 means 4.5% hold)
+export function calculateHold(odds1: number, odds2: number): number {
+  const decimal1 = americanToDecimal(odds1);
+  const decimal2 = americanToDecimal(odds2);
+  const impliedProb1 = 1 / decimal1;
+  const impliedProb2 = 1 / decimal2;
+  const totalProb = impliedProb1 + impliedProb2;
+  // Hold is how much over 100% the total implied probability is
+  return Math.round((totalProb - 1) * 1000) / 10; // Return as percentage with 1 decimal
+}
+
+// Find the best (lowest) hold across all books for a market
+export function findBestHold(
+  odds1Array: Array<{ book: string; price: number }>,
+  odds2Array: Array<{ book: string; price: number }>
+): { book: string; hold: number } | null {
+  let bestHold = Infinity;
+  let bestBook = "";
+
+  // Check same-book hold first
+  for (const o1 of odds1Array) {
+    const o2 = odds2Array.find(o => o.book === o1.book);
+    if (o2) {
+      const hold = calculateHold(o1.price, o2.price);
+      if (hold < bestHold) {
+        bestHold = hold;
+        bestBook = o1.book;
+      }
+    }
+  }
+
+  // Also check cross-book best hold (for display purposes)
+  const best1 = odds1Array.reduce((best, curr) => curr.price > best.price ? curr : best, odds1Array[0]);
+  const best2 = odds2Array.reduce((best, curr) => curr.price > best.price ? curr : best, odds2Array[0]);
+  if (best1 && best2) {
+    const crossHold = calculateHold(best1.price, best2.price);
+    if (crossHold < bestHold) {
+      bestHold = crossHold;
+      bestBook = "Best combo";
+    }
+  }
+
+  return bestBook ? { book: bestBook, hold: bestHold } : null;
 }
