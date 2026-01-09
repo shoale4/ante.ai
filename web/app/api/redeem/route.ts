@@ -83,16 +83,17 @@ export async function POST(request: NextRequest) {
     // Handle promo codes
     if (invite.type === "promo") {
       // Check if expired
-      if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+      if (invite.expiresAt && new Date(String(invite.expiresAt)) < new Date()) {
         return NextResponse.json(
           { error: "This promo code has expired" },
           { status: 400 }
         );
       }
 
-      // Check if max uses reached
-      const currentUses = invite.useCount || 0;
-      if (invite.maxUses && currentUses >= invite.maxUses) {
+      // Check if max uses reached (KV returns strings, so parse to int)
+      const currentUses = parseInt(String(invite.useCount || 0), 10);
+      const maxUses = invite.maxUses ? parseInt(String(invite.maxUses), 10) : null;
+      if (maxUses && currentUses >= maxUses) {
         return NextResponse.json(
           { error: "This promo code has reached its maximum uses" },
           { status: 400 }
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
 
       // Check if this email already used this promo code
       const redeemedEmails: string[] = invite.redeemedEmails
-        ? JSON.parse(invite.redeemedEmails)
+        ? JSON.parse(String(invite.redeemedEmails))
         : [];
 
       if (redeemedEmails.includes(normalizedEmail)) {
@@ -115,9 +116,13 @@ export async function POST(request: NextRequest) {
       // Add email to redeemed list and increment count
       redeemedEmails.push(normalizedEmail);
       await kv.hset(`${INVITE_PREFIX}${normalizedCode}`, {
-        ...invite,
+        type: "promo",
+        createdAt: String(invite.createdAt),
+        createdBy: String(invite.createdBy),
         useCount: currentUses + 1,
         redeemedEmails: JSON.stringify(redeemedEmails),
+        ...(invite.expiresAt && { expiresAt: String(invite.expiresAt) }),
+        ...(maxUses && { maxUses }),
       });
 
       // Create redemption record for this email
