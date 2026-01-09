@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
       source,
     };
-    await kv.hset(`waitlist:entry:${normalizedEmail}`, entry);
+    await kv.hset(`waitlist:entry:${normalizedEmail}`, { ...entry });
 
     console.log(`[Waitlist] New signup: ${normalizedEmail} from ${source}`);
 
