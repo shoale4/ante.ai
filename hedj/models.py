@@ -11,7 +11,7 @@ from typing import List, Literal, Optional
 class OutcomeOdds:
     """Represents an individual betting outcome."""
 
-    outcome: Literal["home", "away", "over", "under"]
+    outcome: Literal["home", "away", "draw", "over", "under"]
     price: int  # American odds
     line: Optional[float] = None  # Spread or total (None for moneyline)
 

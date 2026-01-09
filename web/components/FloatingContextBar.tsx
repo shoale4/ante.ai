@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Sport } from "@/lib/types";
 
 const SPORT_EMOJI: Record<Sport | "all", string> = {
@@ -31,6 +33,8 @@ export function FloatingContextBar({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Hide on scroll down, show on scroll up
   useEffect(() => {
@@ -64,6 +68,30 @@ export function FloatingContextBar({
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, [isExpanded]);
+
+  // Handle "View Arbs" action based on current page
+  const handleViewArbs = () => {
+    setIsExpanded(false);
+    if (pathname === "/") {
+      document.getElementById("arb-section")?.scrollIntoView({ behavior: "smooth" });
+    } else if (pathname === "/arbitrage") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      router.push("/arbitrage");
+    }
+  };
+
+  // Handle "All Games" action based on current page
+  const handleAllGames = () => {
+    setIsExpanded(false);
+    if (pathname === "/") {
+      document.getElementById("feed-section")?.scrollIntoView({ behavior: "smooth" });
+    } else if (pathname === "/feed") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      router.push("/feed");
+    }
+  };
 
   return (
     <>
@@ -199,26 +227,34 @@ export function FloatingContextBar({
                 {/* Quick Actions */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      document.getElementById("arb-section")?.scrollIntoView({ behavior: "smooth" });
-                      setIsExpanded(false);
-                    }}
+                    onClick={handleViewArbs}
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-green-500 text-white font-semibold text-[11px] active:scale-95 transition-transform"
                   >
                     <span>💰</span>
                     <span>View Arbs</span>
                   </button>
                   <button
-                    onClick={() => {
-                      document.getElementById("feed-section")?.scrollIntoView({ behavior: "smooth" });
-                      setIsExpanded(false);
-                    }}
+                    onClick={handleAllGames}
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-[11px] active:scale-95 transition-transform hover:bg-white/15"
                   >
                     <span>🏆</span>
                     <span>All Games</span>
                   </button>
                 </div>
+
+                {/* Page Navigation (on non-home pages) */}
+                {pathname !== "/" && (
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <Link
+                      href="/"
+                      onClick={() => setIsExpanded(false)}
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 text-white/60 font-medium text-[11px] active:scale-95 transition-transform hover:bg-white/10"
+                    >
+                      <span>🏠</span>
+                      <span>Back to Dashboard</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>

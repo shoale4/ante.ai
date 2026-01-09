@@ -20,7 +20,7 @@ interface HistoricalOdds {
   homeTeam: string;
   awayTeam: string;
   marketType: "moneyline" | "spread" | "total";
-  outcome: "home" | "away" | "over" | "under";
+  outcome: "home" | "away" | "draw" | "over" | "under";
   price: number;
   line: number | null;
 }
@@ -62,7 +62,7 @@ export async function getLatestOdds(): Promise<OddsSnapshot[]> {
         homeTeam: values[4],
         awayTeam: values[5],
         marketType: values[6] as "moneyline" | "spread" | "total",
-        outcome: values[7] as "home" | "away" | "over" | "under",
+        outcome: values[7] as "home" | "away" | "draw" | "over" | "under",
         openingPrice: parseInt(values[8]) || 0,
         currentPrice: parseInt(values[9]) || 0,
         priceMovement: parseInt(values[10]) || 0,
@@ -221,7 +221,7 @@ async function getHistoricalOdds(): Promise<HistoricalOdds[]> {
         homeTeam: values[5],
         awayTeam: values[6],
         marketType: values[7] as "moneyline" | "spread" | "total",
-        outcome: values[8] as "home" | "away" | "over" | "under",
+        outcome: values[8] as "home" | "away" | "draw" | "over" | "under",
         price: parseInt(values[9]) || 0,
         line: values[10] ? parseFloat(values[10]) : null,
       };

@@ -6,7 +6,7 @@ export interface OddsSnapshot {
   homeTeam: string;
   awayTeam: string;
   marketType: "moneyline" | "spread" | "total";
-  outcome: "home" | "away" | "over" | "under";
+  outcome: "home" | "away" | "draw" | "over" | "under";
   openingPrice: number;
   currentPrice: number;
   priceMovement: number;

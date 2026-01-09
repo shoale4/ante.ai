@@ -79,6 +79,61 @@ function checkTwoWayArbitrage(
   return null;
 }
 
+// Check if there's an arbitrage opportunity in a three-way market (home/draw/away)
+function checkThreeWayArbitrage(
+  odds1: { book: string; price: number; side: string },
+  odds2: { book: string; price: number; side: string },
+  odds3: { book: string; price: number; side: string }
+): ArbitrageOpportunity["legs"] | null {
+  const decimal1 = americanToDecimal(odds1.price);
+  const decimal2 = americanToDecimal(odds2.price);
+  const decimal3 = americanToDecimal(odds3.price);
+
+  const prob1 = decimalToImpliedProb(decimal1);
+  const prob2 = decimalToImpliedProb(decimal2);
+  const prob3 = decimalToImpliedProb(decimal3);
+
+  const totalProb = prob1 + prob2 + prob3;
+
+  // If total probability < 1, there's an arbitrage opportunity
+  if (totalProb < 1) {
+    const totalStake = 100;
+    const stake1 = (prob1 / totalProb) * totalStake;
+    const stake2 = (prob2 / totalProb) * totalStake;
+    const stake3 = (prob3 / totalProb) * totalStake;
+    const payout = stake1 * decimal1; // All payouts should be equal
+
+    return [
+      {
+        side: odds1.side,
+        book: odds1.book,
+        odds: odds1.price,
+        impliedProb: prob1 * 100,
+        stake: Math.round(stake1 * 100) / 100,
+        payout: Math.round(payout * 100) / 100,
+      },
+      {
+        side: odds2.side,
+        book: odds2.book,
+        odds: odds2.price,
+        impliedProb: prob2 * 100,
+        stake: Math.round(stake2 * 100) / 100,
+        payout: Math.round(payout * 100) / 100,
+      },
+      {
+        side: odds3.side,
+        book: odds3.book,
+        odds: odds3.price,
+        impliedProb: prob3 * 100,
+        stake: Math.round(stake3 * 100) / 100,
+        payout: Math.round(payout * 100) / 100,
+      },
+    ];
+  }
+
+  return null;
+}
+
 // Find best odds for each side across all books
 function findBestOdds(
   oddsArray: BookOdds[],
@@ -105,8 +160,33 @@ export function findArbitrageOpportunities(
   // Check moneyline market
   const bestHomeML = findBestOdds(game.markets.moneyline, "home");
   const bestAwayML = findBestOdds(game.markets.moneyline, "away");
+  const bestDrawML = findBestOdds(game.markets.moneyline, "draw");
 
-  if (bestHomeML && bestAwayML) {
+  // Check for three-way arbitrage (Soccer, NHL regulation, etc.) if draw odds exist
+  if (bestHomeML && bestAwayML && bestDrawML) {
+    const legs = checkThreeWayArbitrage(
+      { ...bestHomeML, side: game.homeTeam },
+      { ...bestDrawML, side: "Draw" },
+      { ...bestAwayML, side: game.awayTeam }
+    );
+
+    if (legs) {
+      const profit = (legs[0].payout - 100) / 100 * 100;
+      opportunities.push({
+        gameId: game.eventId,
+        sport: game.sport,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        eventStartTime: game.eventStartTime,
+        type: "three-way",
+        market: "moneyline",
+        profit: Math.round(profit * 100) / 100,
+        totalStake: 100,
+        legs,
+      });
+    }
+  } else if (bestHomeML && bestAwayML) {
+    // Fallback to two-way for sports without draws
     const legs = checkTwoWayArbitrage(
       { ...bestHomeML, side: game.homeTeam },
       { ...bestAwayML, side: game.awayTeam }

@@ -144,7 +144,7 @@ class ExampleProvider(OddsProvider):
         outcomes_data = market_data.get("outcomes", [])
 
         if market_key == "h2h":
-            # Moneyline
+            # Moneyline (including draw for soccer)
             outcomes = []
             for o in outcomes_data:
                 name = o.get("name", "")
@@ -153,6 +153,8 @@ class ExampleProvider(OddsProvider):
                     outcomes.append(OutcomeOdds(outcome="home", price=price))
                 elif name == away_team:
                     outcomes.append(OutcomeOdds(outcome="away", price=price))
+                elif name.lower() == "draw":
+                    outcomes.append(OutcomeOdds(outcome="draw", price=price))
             if outcomes:
                 return MarketOdds(market_type="moneyline", book=book, outcomes=outcomes)
 
@@ -635,6 +637,7 @@ class ExampleProvider(OddsProvider):
                         book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=120),
+                            OutcomeOdds(outcome="draw", price=250),
                             OutcomeOdds(outcome="away", price=180),
                         ],
                     ),
@@ -668,6 +671,7 @@ class ExampleProvider(OddsProvider):
                         book="fanduel",
                         outcomes=[
                             OutcomeOdds(outcome="home", price=110),
+                            OutcomeOdds(outcome="draw", price=240),
                             OutcomeOdds(outcome="away", price=165),
                         ],
                     ),

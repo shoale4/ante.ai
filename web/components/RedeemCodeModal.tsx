@@ -8,7 +8,12 @@ interface Props {
   onClose: () => void;
 }
 
+function isValidEmail(email: string): boolean {
+  return email.includes("@") && email.includes(".");
+}
+
 export function RedeemCodeModal({ isOpen, onClose }: Props) {
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +22,7 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
 
   useEffect(() => {
     if (isOpen) {
+      setEmail("");
       setCode("");
       setError(null);
       setSuccess(false);
@@ -39,7 +45,12 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim()) return;
+    if (!email.trim() || !code.trim()) return;
+
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -48,7 +59,10 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
       const response = await fetch("/api/redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
+        body: JSON.stringify({
+          code: code.trim(),
+          email: email.trim().toLowerCase(),
+        }),
       });
 
       const data = await response.json();
@@ -101,7 +115,7 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
             </button>
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            Enter your invite code to unlock Pro features
+            Enter your email and invite code to unlock Pro
           </p>
         </div>
 
@@ -119,25 +133,45 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
+              <div className="space-y-3">
+                {/* Email Input */}
                 <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5 ml-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                    placeholder="you@example.com"
+                    className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    autoFocus
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Code Input */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5 ml-1">
+                    Invite Code
+                  </label>
                   <input
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                     placeholder="HEDJ-XXXX-XXXX"
                     className="w-full px-4 py-3 text-center text-lg font-mono tracking-wider border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent uppercase"
-                    autoFocus
                     disabled={isLoading}
                   />
-                  {error && (
-                    <p className="text-sm text-red-500 mt-2 text-center">{error}</p>
-                  )}
                 </div>
+
+                {error && (
+                  <p className="text-sm text-red-500 text-center">{error}</p>
+                )}
 
                 <button
                   type="submit"
-                  disabled={isLoading || !code.trim()}
+                  disabled={isLoading || !code.trim() || !email.trim()}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold hover:from-amber-300 hover:to-orange-400 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
                 >
                   {isLoading ? "Checking..." : "Redeem Code"}

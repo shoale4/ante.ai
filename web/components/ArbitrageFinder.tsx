@@ -73,13 +73,15 @@ export function ArbitrageFinder({ games, onWaitlist, isPro = false }: Props) {
         </div>
       </div>
 
-      {/* Warning Banner - Compact */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-        <span className="text-amber-500 text-xs">⚠️</span>
-        <p className="text-[10px] text-amber-700">
-          <strong>Preview:</strong> Data may be stale. Do not place real bets.
-        </p>
-      </div>
+      {/* Warning Banner - only show for non-Pro users */}
+      {!isPro && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <span className="text-amber-500 text-xs">⚠️</span>
+          <p className="text-[10px] text-amber-700">
+            <strong>Preview:</strong> Data may be stale. Do not place real bets.
+          </p>
+        </div>
+      )}
 
       {/* Content */}
       {allOpportunities.length > 0 ? (

@@ -71,16 +71,17 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(GITHUB_PROPS_URL, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      cache: "no-store", // Disable caching for debugging
     });
 
     if (!response.ok) {
-      // No props data yet - return empty
+      console.log("[Props] GitHub fetch failed:", response.status);
       return NextResponse.json({ data: [], meta: {} });
     }
 
     const content = await response.text();
     const lines = content.trim().split("\n");
+    console.log("[Props] Fetched", lines.length, "lines from GitHub");
 
     if (lines.length < 2) {
       return NextResponse.json({ data: [], meta: {} });
@@ -106,9 +107,11 @@ export async function GET(request: NextRequest) {
     });
 
     // Filter by eventId if provided
+    console.log("[Props] Parsed", allData.length, "records, first event_id:", allData[0]?.event_id);
     let filtered = eventId
       ? allData.filter((d) => d.event_id === eventId)
       : allData;
+    console.log("[Props] Filtered to", filtered.length, "records for eventId:", eventId);
 
     // Group by player + prop type + line to create unified prop objects
     const propMap = new Map<string, PlayerProp>();
