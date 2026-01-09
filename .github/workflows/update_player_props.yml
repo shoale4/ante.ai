@@ -49,5 +49,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update player props - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            # Pull and rebase to handle concurrent updates
+            git pull --rebase origin main || true
             git push
           fi
