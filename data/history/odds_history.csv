@@ -5719,3 +5719,27 @@ timestamp_utc,book,sport,event_id,event_start_time,home_team,away_team,market_ty
 2026-01-09T17:24:56.201636+00:00,betmgm,Soccer,b0ba4f8288a19962cc5de754d9f14660,2026-01-21T20:00:00+00:00,Newcastle United,PSV Eindhoven,moneyline,away,475,
 2026-01-09T17:24:56.201636+00:00,betmgm,Soccer,b0ba4f8288a19962cc5de754d9f14660,2026-01-21T20:00:00+00:00,Newcastle United,PSV Eindhoven,total,over,-105,3.5
 2026-01-09T17:24:56.201636+00:00,betmgm,Soccer,b0ba4f8288a19962cc5de754d9f14660,2026-01-21T20:00:00+00:00,Newcastle United,PSV Eindhoven,total,under,-135,3.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_001,2026-01-11T18:36:42.933931+00:00,Kansas City Chiefs,Buffalo Bills,moneyline,home,-150,
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_001,2026-01-11T18:36:42.933931+00:00,Kansas City Chiefs,Buffalo Bills,moneyline,away,130,
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_001,2026-01-11T18:36:42.933931+00:00,Kansas City Chiefs,Buffalo Bills,spread,home,-110,-3.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_001,2026-01-11T18:36:42.933931+00:00,Kansas City Chiefs,Buffalo Bills,spread,away,-110,3.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_001,2026-01-11T18:36:42.933931+00:00,Kansas City Chiefs,Buffalo Bills,total,over,-110,47.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_001,2026-01-11T18:36:42.933931+00:00,Kansas City Chiefs,Buffalo Bills,total,under,-110,47.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_002,2026-01-12T18:36:42.933931+00:00,San Francisco 49ers,Dallas Cowboys,moneyline,home,-180,
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_002,2026-01-12T18:36:42.933931+00:00,San Francisco 49ers,Dallas Cowboys,moneyline,away,155,
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_002,2026-01-12T18:36:42.933931+00:00,San Francisco 49ers,Dallas Cowboys,spread,home,-105,-4.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_002,2026-01-12T18:36:42.933931+00:00,San Francisco 49ers,Dallas Cowboys,spread,away,-115,4.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_002,2026-01-12T18:36:42.933931+00:00,San Francisco 49ers,Dallas Cowboys,total,over,-108,49.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NFL,nfl_stub_002,2026-01-12T18:36:42.933931+00:00,San Francisco 49ers,Dallas Cowboys,total,under,-112,49.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_001,2026-01-10T18:36:43.185762+00:00,Los Angeles Lakers,Boston Celtics,moneyline,home,120,
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_001,2026-01-10T18:36:43.185762+00:00,Los Angeles Lakers,Boston Celtics,moneyline,away,-140,
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_001,2026-01-10T18:36:43.185762+00:00,Los Angeles Lakers,Boston Celtics,spread,home,-110,2.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_001,2026-01-10T18:36:43.185762+00:00,Los Angeles Lakers,Boston Celtics,spread,away,-110,-2.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_001,2026-01-10T18:36:43.185762+00:00,Los Angeles Lakers,Boston Celtics,total,over,-110,225.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_001,2026-01-10T18:36:43.185762+00:00,Los Angeles Lakers,Boston Celtics,total,under,-110,225.5
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_002,2026-01-10T21:36:43.185762+00:00,Golden State Warriors,Phoenix Suns,moneyline,home,-165,
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_002,2026-01-10T21:36:43.185762+00:00,Golden State Warriors,Phoenix Suns,moneyline,away,145,
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_002,2026-01-10T21:36:43.185762+00:00,Golden State Warriors,Phoenix Suns,spread,home,-108,-4.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_002,2026-01-10T21:36:43.185762+00:00,Golden State Warriors,Phoenix Suns,spread,away,-112,4.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_002,2026-01-10T21:36:43.185762+00:00,Golden State Warriors,Phoenix Suns,total,over,-105,232.0
+2026-01-09T18:36:43.186825+00:00,fanduel,NBA,nba_stub_002,2026-01-10T21:36:43.185762+00:00,Golden State Warriors,Phoenix Suns,total,under,-115,232.0
