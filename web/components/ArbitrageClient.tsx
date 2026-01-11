@@ -6,6 +6,7 @@ import { ArbitrageFinderBySport } from "@/components/ArbitrageFinderBySport";
 import { FloatingContextBar } from "@/components/FloatingContextBar";
 import { WaitlistModal, useWaitlistModal } from "@/components/WaitlistModal";
 import { RedeemCodeModal, useRedeemModal } from "@/components/RedeemCodeModal";
+import { LaunchBanner } from "@/components/LaunchBanner";
 import { findAllArbitrage } from "@/lib/arbitrage";
 import { usePro } from "@/lib/pro-context";
 
@@ -34,6 +35,9 @@ export function ArbitrageClient({ games }: Props) {
 
   return (
     <>
+      {/* Launch Promo Banner */}
+      <LaunchBanner onRedeemClick={() => redeemModal.open("DABEARSCHAMPS26")} />
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6">
         {/* Pro Features Banner */}
         {isPro ? (
@@ -62,7 +66,7 @@ export function ArbitrageClient({ games }: Props) {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={redeemModal.open}
+                onClick={() => redeemModal.open()}
                 className="text-[11px] text-gray-400 hover:text-white transition-colors"
               >
                 Have a code?
@@ -104,6 +108,7 @@ export function ArbitrageClient({ games }: Props) {
       <RedeemCodeModal
         isOpen={redeemModal.isOpen}
         onClose={redeemModal.close}
+        initialCode={redeemModal.initialCode}
       />
     </>
   );

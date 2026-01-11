@@ -6,15 +6,16 @@ import { usePro } from "@/lib/pro-context";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  initialCode?: string;
 }
 
 function isValidEmail(email: string): boolean {
   return email.includes("@") && email.includes(".");
 }
 
-export function RedeemCodeModal({ isOpen, onClose }: Props) {
+export function RedeemCodeModal({ isOpen, onClose, initialCode = "" }: Props) {
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -23,11 +24,11 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
   useEffect(() => {
     if (isOpen) {
       setEmail("");
-      setCode("");
+      setCode(initialCode || "");
       setError(null);
       setSuccess(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialCode]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -188,10 +189,18 @@ export function RedeemCodeModal({ isOpen, onClose }: Props) {
 // Hook to manage redeem modal state
 export function useRedeemModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const [initialCode, setInitialCode] = useState("");
 
   return {
     isOpen,
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false),
+    initialCode,
+    open: (code?: string) => {
+      setInitialCode(code || "");
+      setIsOpen(true);
+    },
+    close: () => {
+      setIsOpen(false);
+      setInitialCode("");
+    },
   };
 }

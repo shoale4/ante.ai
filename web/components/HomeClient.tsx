@@ -73,7 +73,7 @@ export function HomeClient({ games, movements, news, weatherData }: Props) {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={redeemModal.open}
+                onClick={() => redeemModal.open()}
                 className="text-[11px] text-gray-400 hover:text-white transition-colors"
               >
                 Have a code?
@@ -134,6 +134,7 @@ export function HomeClient({ games, movements, news, weatherData }: Props) {
       <RedeemCodeModal
         isOpen={redeemModal.isOpen}
         onClose={redeemModal.close}
+        initialCode={redeemModal.initialCode}
       />
     </>
   );
