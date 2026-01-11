@@ -56,10 +56,11 @@ export default async function Home() {
           {/* Legal disclaimer */}
           <div className="pt-4 border-t border-gray-100">
             <p className="text-[10px] text-gray-400 text-center leading-relaxed max-w-2xl mx-auto">
-              Must be 21+ (18+ in some states). Gambling problem? Call 1-800-GAMBLER.
+              Must be 21+ (18+ in some states). Sports betting legality varies by state -
+              please verify betting is legal in your jurisdiction before using any sportsbook.
+              Gambling problem? Call 1-800-GAMBLER.
               Hedj provides informational content only and does not facilitate gambling.
-              Odds are for informational purposes and may not reflect actual sportsbook lines.
-              Always verify odds directly with the sportsbook before placing bets.
+              Odds are for informational purposes only. Always verify directly with the sportsbook.
             </p>
           </div>
         </div>

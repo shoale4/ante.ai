@@ -79,7 +79,7 @@ import type { GameWeather } from "./weather";
 
 export type FeedItemType = "game" | "movement" | "news";
 
-export type Sport = "NFL" | "NBA" | "MLB" | "NHL" | "MMA" | "Soccer";
+export type Sport = "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer";
 
 export interface GameFeedItem {
   type: "game";

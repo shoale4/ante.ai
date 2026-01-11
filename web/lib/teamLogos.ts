@@ -194,11 +194,15 @@ const SOCCER_TEAMS: Record<string, string> = {
 // MMA fighters don't have team logos - they'll use initials
 const MMA_FIGHTERS: Record<string, string> = {};
 
-type Sport = "NFL" | "NBA" | "MLB" | "NHL" | "MMA" | "Soccer";
+type Sport = "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer";
+
+// NCAAB teams - will be populated as needed
+const NCAAB_TEAMS: Record<string, string> = {};
 
 const TEAMS_BY_SPORT: Record<Sport, Record<string, string>> = {
   NFL: NFL_TEAMS,
   NBA: NBA_TEAMS,
+  NCAAB: NCAAB_TEAMS,
   MLB: MLB_TEAMS,
   NHL: NHL_TEAMS,
   MMA: MMA_FIGHTERS,

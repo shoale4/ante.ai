@@ -12,6 +12,7 @@ import { getTeamLogo } from "@/lib/teamLogos";
 const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
   NBA: "🏀",
+  NCAAB: "🏀",
   MLB: "⚾",
   NHL: "🏒",
   MMA: "🥊",

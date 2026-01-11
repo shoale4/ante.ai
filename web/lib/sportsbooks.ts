@@ -110,6 +110,18 @@ export const SPORTSBOOKS: Record<string, Sportsbook> = {
     affiliateUrl: "https://www.barstoolsportsbook.com/", // Add ?ref=YOUR_ID
     color: "#000000",
   },
+  espnbet: {
+    name: "espnbet",
+    displayName: "ESPN BET",
+    affiliateUrl: "https://www.espnbet.com/", // Add ?ref=YOUR_ID
+    color: "#d00000",
+  },
+  unibet: {
+    name: "unibet",
+    displayName: "Unibet",
+    affiliateUrl: "https://www.unibet.com/", // Add ?ref=YOUR_ID
+    color: "#147b45",
+  },
 };
 
 export function getSportsbook(bookName: string): Sportsbook {

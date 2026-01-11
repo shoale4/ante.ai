@@ -50,17 +50,14 @@ export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
   const timeStr = gameTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col">
-        {/* Handle bar */}
-        <div className="sm:hidden flex justify-center pt-2 pb-1 flex-shrink-0">
-          <div className="w-8 h-1 rounded-full bg-gray-300" />
-        </div>
-
+      {/* Modal Container - Centers on all screens */}
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        {/* Modal */}
+        <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden bg-white rounded-2xl shadow-2xl flex flex-col">
         {/* Header - Compact */}
         <div className="flex-shrink-0 border-b border-gray-100 px-4 pt-2 pb-3">
           <div className="flex items-start justify-between gap-3">
@@ -168,6 +165,7 @@ export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
           {activeTab === "props" && (
             <PlayerPropsSection eventId={game.eventId} isPro={isPro} onWaitlist={onWaitlist} />
           )}
+        </div>
         </div>
       </div>
     </div>

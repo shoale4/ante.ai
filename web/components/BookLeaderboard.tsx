@@ -8,7 +8,7 @@ interface Props {
   games: GameOdds[];
 }
 
-const SPORTS: Sport[] = ["NFL", "NBA", "MLB", "NHL", "MMA", "Soccer"];
+const SPORTS: Sport[] = ["NFL", "NBA", "NCAAB", "MLB", "NHL", "MMA", "Soccer"];
 
 export function BookLeaderboard({ games }: Props) {
   const [selectedSport, setSelectedSport] = useState<Sport | "all">("all");

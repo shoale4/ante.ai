@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
         normalizedCode.startsWith("TEST") ||
         normalizedCode.startsWith("LAUNCH") ||
         normalizedCode.startsWith("BETA") ||
+        normalizedCode.startsWith("DABEARSCHAMPS") ||
         /^HEDJ-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalizedCode)
       ) {
         return NextResponse.json({

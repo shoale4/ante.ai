@@ -13,6 +13,7 @@ const SPORT_OPTIONS: { value: SportFilter; label: string; emoji: string }[] = [
   { value: "all", label: "All", emoji: "🎯" },
   { value: "NFL", label: "NFL", emoji: "🏈" },
   { value: "NBA", label: "NBA", emoji: "🏀" },
+  { value: "NCAAB", label: "NCAAB", emoji: "🏀" },
   { value: "MLB", label: "MLB", emoji: "⚾" },
   { value: "NHL", label: "NHL", emoji: "🏒" },
   { value: "MMA", label: "MMA", emoji: "🥊" },

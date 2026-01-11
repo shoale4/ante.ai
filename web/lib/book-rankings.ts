@@ -197,6 +197,11 @@ export const BOOK_NAMES: Record<string, string> = {
   pointsbetus: "PointsBet",
   bet365: "bet365",
   betonlineag: "BetOnline",
+  betrivers: "BetRivers",
+  unibet: "Unibet",
+  wynnbet: "WynnBET",
+  superbook: "SuperBook",
+  espnbet: "ESPN BET",
 };
 
 // Book colors for UI
@@ -208,4 +213,9 @@ export const BOOK_COLORS: Record<string, string> = {
   pointsbetus: "#e91c23",
   bet365: "#027b5b",
   betonlineag: "#ff6b00",
+  betrivers: "#1a1a1a",
+  unibet: "#147b45",
+  wynnbet: "#0c2340",
+  superbook: "#c8102e",
+  espnbet: "#d00000",
 };

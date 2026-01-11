@@ -26,10 +26,10 @@ export function LaunchBanner({ onRedeemClick }: Props) {
             <span className="flex-shrink-0 text-lg">🎉</span>
             <div className="min-w-0">
               <p className="text-sm font-bold truncate">
-                Launch Special: First 100 users get Pro FREE
+                Launch Special: First 100 get Pro FREE
               </p>
               <p className="text-xs text-black/70 hidden sm:block">
-                Use code <span className="font-mono font-bold bg-black/10 px-1.5 py-0.5 rounded">DABEARSCHAMPS26</span> to unlock all features
+                Code <span className="font-mono font-bold bg-black/10 px-1.5 py-0.5 rounded">DABEARSCHAMPS26</span> unlocks unlimited arbs + player props
               </p>
             </div>
           </div>

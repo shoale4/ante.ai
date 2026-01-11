@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { GameOdds } from "@/lib/types";
 import { ArbitrageBadge } from "./ArbitrageFinder";
 import { LastUpdated } from "./LastUpdated";
+import { StateSelector } from "./StateSelector";
 
 interface Props {
   games: GameOdds[];
@@ -19,10 +21,24 @@ const navLinks = [
 
 export function Header({ games, lastUpdated }: Props) {
   const pathname = usePathname();
+  const navRef = useRef<HTMLDivElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
-  const bookCount = new Set(
-    games.flatMap((g) => Object.values(g.markets).flat().map((m) => m.book))
-  ).size;
+  // Update indicator position when pathname changes
+  useEffect(() => {
+    if (!navRef.current) return;
+
+    const activeLink = navRef.current.querySelector(`a[href="${pathname}"]`) as HTMLElement;
+    if (activeLink) {
+      const navRect = navRef.current.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+      setIndicatorStyle({
+        left: linkRect.left - navRect.left,
+        width: linkRect.width,
+      });
+    }
+  }, [pathname]);
+
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
@@ -51,15 +67,27 @@ export function Header({ games, lastUpdated }: Props) {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden sm:flex items-center gap-1 ml-6">
+            <nav
+              ref={navRef}
+              className="hidden sm:flex items-center ml-6 p-1 bg-gray-100/80 rounded-xl relative"
+            >
+              {/* Sliding indicator */}
+              <div
+                className="absolute top-1 bottom-1 bg-white rounded-lg shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+                style={{
+                  left: indicatorStyle.left,
+                  width: indicatorStyle.width,
+                  opacity: indicatorStyle.width > 0 ? 1 : 0,
+                }}
+              />
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`relative z-10 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
                     pathname === link.href
-                      ? "bg-gray-900 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "text-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   {link.label}
@@ -69,25 +97,20 @@ export function Header({ games, lastUpdated }: Props) {
           </div>
 
           {/* Desktop badges */}
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 flex-nowrap">
+            <StateSelector compact />
             <ArbitrageBadge games={games} />
-            <span className="pill pill-purple">
-              {bookCount} books
-            </span>
-            <span className="pill pill-green">
-              {games.length} games
-            </span>
             <LastUpdated timestamp={lastUpdated} />
-            <span className="relative flex h-3 w-3">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
           </div>
 
           {/* Mobile badges - simplified */}
           <div className="flex sm:hidden items-center gap-1.5">
+            <StateSelector compact />
             <ArbitrageBadge games={games} />
-            <LastUpdated timestamp={lastUpdated} />
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>

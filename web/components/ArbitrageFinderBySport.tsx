@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 
-const SPORTS: Sport[] = ["NFL", "NBA", "NHL", "MLB", "MMA", "Soccer"];
+const SPORTS: Sport[] = ["NFL", "NBA", "NCAAB", "NHL", "MLB", "MMA", "Soccer"];
 
 const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
   NBA: "🏀",
+  NCAAB: "🏀",
   MLB: "⚾",
   NHL: "🏒",
   MMA: "🥊",
@@ -102,16 +103,6 @@ export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false }: Pro
           </span>
         </div>
       </div>
-
-      {/* Warning Banner - only show for non-Pro users */}
-      {!isPro && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-          <span className="text-amber-500 text-xs">⚠️</span>
-          <p className="text-[10px] text-amber-700">
-            <strong>Preview:</strong> Data may be stale. Do not place real bets.
-          </p>
-        </div>
-      )}
 
       {/* Sport Sections */}
       {activeSports.length > 0 ? (
