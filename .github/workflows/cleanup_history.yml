@@ -1,10 +1,9 @@
-name: Update Odds Feed
+name: Cleanup Old History Data
 
 on:
   schedule:
-    # Run every hour to balance freshness vs API costs
-    # 8 sports × 3 markets = 24 credits/run × 24 runs/day = 576 credits/day
-    - cron: "0 * * * *"
+    # Run weekly on Sunday at midnight UTC
+    - cron: "0 0 * * 0"
   workflow_dispatch:
     # Allow manual triggers
 
@@ -12,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  update-feed:
+  cleanup:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,8 +35,8 @@ jobs:
             sed -i 's/"api_key": "YOUR_API_KEY"/"api_key": "${{ secrets.ODDS_API_KEY }}"/' config.json
           fi
 
-      - name: Run odds feed update
-        run: python -m hedj.cli --config config.json
+      - name: Cleanup old history data
+        run: python -m hedj.cli --config config.json --cleanup --cleanup-days 7
 
       - name: Commit and push changes
         run: |
@@ -49,8 +48,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update odds feed - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-            # Pull and rebase to handle concurrent updates
+            git commit -m "Cleanup: remove history data older than 7 days"
             git pull --rebase origin main || true
             git push
           fi

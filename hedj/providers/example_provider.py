@@ -27,6 +27,7 @@ class ExampleProvider(OddsProvider):
         books: List[str],
         raw_directory: Optional[str] = None,
         player_prop_markets: Optional[List[str]] = None,
+        markets: Optional[List[str]] = None,
     ):
         self.base_url = base_url
         self.api_key = api_key
@@ -35,6 +36,9 @@ class ExampleProvider(OddsProvider):
         self.raw_directory = Path(raw_directory) if raw_directory else None
         self._book_name = books[0] if books else "example_book"
         self.player_prop_markets = player_prop_markets or []
+        self.markets = markets or ["h2h", "spreads", "totals"]
+        self.api_requests_used = 0
+        self.api_requests_remaining = None
 
     @property
     def book_name(self) -> str:
@@ -66,7 +70,7 @@ class ExampleProvider(OddsProvider):
         params = {
             "apiKey": self.api_key,
             "regions": ",".join(self.regions),
-            "markets": "h2h,spreads,totals",
+            "markets": ",".join(self.markets),
             "oddsFormat": "american",
             "bookmakers": ",".join(self.books),
         }
@@ -77,6 +81,15 @@ class ExampleProvider(OddsProvider):
         response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
+
+        # Track API usage from response headers
+        requests_used = response.headers.get("x-requests-used")
+        requests_remaining = response.headers.get("x-requests-remaining")
+        if requests_used:
+            self.api_requests_used = int(requests_used)
+        if requests_remaining:
+            self.api_requests_remaining = int(requests_remaining)
+            logger.info(f"API quota: {requests_remaining} requests remaining")
 
         # Save raw response for debugging
         if self.raw_directory:

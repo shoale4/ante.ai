@@ -240,34 +240,42 @@ export function findArbitrageOpportunities(
     }
   }
 
-  // Check spread market (need to match same line)
-  const spreadLines = new Map<number, { home: BookOdds[]; away: BookOdds[] }>();
+  // Check spread market (need to match COMPLEMENTARY lines: home +X with away -X)
+  // Group home and away spreads separately by their line values
+  const homeSpreadsByLine = new Map<number, BookOdds[]>();
+  const awaySpreadsByLine = new Map<number, BookOdds[]>();
 
   game.markets.spread.forEach((odds) => {
     const line = odds.currentLine ?? 0;
-    if (!spreadLines.has(line)) {
-      spreadLines.set(line, { home: [], away: [] });
-    }
-    const group = spreadLines.get(line)!;
     if (odds.outcome === "home") {
-      group.home.push(odds);
+      if (!homeSpreadsByLine.has(line)) {
+        homeSpreadsByLine.set(line, []);
+      }
+      homeSpreadsByLine.get(line)!.push(odds);
     } else {
-      group.away.push(odds);
+      if (!awaySpreadsByLine.has(line)) {
+        awaySpreadsByLine.set(line, []);
+      }
+      awaySpreadsByLine.get(line)!.push(odds);
     }
   });
 
-  spreadLines.forEach((group, line) => {
-    if (group.home.length > 0 && group.away.length > 0) {
-      const bestHome = group.home.reduce((best, curr) =>
+  // For each home spread line, look for complementary away spread (negated line)
+  homeSpreadsByLine.forEach((homeOdds, homeLine) => {
+    const complementaryAwayLine = -homeLine;
+    const awayOdds = awaySpreadsByLine.get(complementaryAwayLine);
+
+    if (awayOdds && awayOdds.length > 0) {
+      const bestHome = homeOdds.reduce((best, curr) =>
         curr.currentPrice > best.currentPrice ? curr : best
       );
-      const bestAway = group.away.reduce((best, curr) =>
+      const bestAway = awayOdds.reduce((best, curr) =>
         curr.currentPrice > best.currentPrice ? curr : best
       );
 
       const legs = checkTwoWayArbitrage(
-        { book: bestHome.book, price: bestHome.currentPrice, side: `${game.homeTeam} ${line > 0 ? '+' : ''}${line}` },
-        { book: bestAway.book, price: bestAway.currentPrice, side: `${game.awayTeam} ${-line > 0 ? '+' : ''}${-line}` }
+        { book: bestHome.book, price: bestHome.currentPrice, side: `${game.homeTeam} ${homeLine > 0 ? '+' : ''}${homeLine}` },
+        { book: bestAway.book, price: bestAway.currentPrice, side: `${game.awayTeam} ${complementaryAwayLine > 0 ? '+' : ''}${complementaryAwayLine}` }
       );
 
       if (legs) {
@@ -291,6 +299,10 @@ export function findArbitrageOpportunities(
   return opportunities.sort((a, b) => b.profit - a.profit);
 }
 
+// Maximum realistic arbitrage profit percentage
+// Anything above this is almost certainly stale/erroneous data
+const MAX_REALISTIC_ARB_PROFIT = 15;
+
 // Find all arbitrage opportunities across all games
 export function findAllArbitrage(games: GameOdds[]): ArbitrageOpportunity[] {
   const allOpportunities: ArbitrageOpportunity[] = [];
@@ -300,8 +312,13 @@ export function findAllArbitrage(games: GameOdds[]): ArbitrageOpportunity[] {
     allOpportunities.push(...gameOpps);
   });
 
+  // Filter out unrealistically high arbs (likely data errors or stale odds)
+  const validOpportunities = allOpportunities.filter(
+    (opp) => opp.profit <= MAX_REALISTIC_ARB_PROFIT
+  );
+
   // Sort by profit descending
-  return allOpportunities.sort((a, b) => b.profit - a.profit);
+  return validOpportunities.sort((a, b) => b.profit - a.profit);
 }
 
 // Calculate expected value of a bet

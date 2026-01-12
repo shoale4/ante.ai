@@ -51,6 +51,7 @@ def create_provider(config: dict) -> ExampleProvider:
             books=provider_config.get("books", ["example_book"]),
             raw_directory=config.get("storage", {}).get("raw_directory"),
             player_prop_markets=provider_config.get("player_prop_markets", []),
+            markets=provider_config.get("markets", ["h2h", "spreads", "totals"]),
         )
     else:
         raise ValueError(f"Unknown provider type: {provider_type}")
@@ -123,6 +124,12 @@ def run_update(config: dict, fetch_props: bool = False) -> None:
             storage.generate_props_latest()
             logger.info(f"Stored {len(all_prop_rows)} total prop rows")
 
+    # Log API usage stats
+    if provider.api_requests_remaining is not None:
+        logger.info(f"API requests remaining this month: {provider.api_requests_remaining}")
+        if provider.api_requests_remaining < 1000:
+            logger.warning(f"LOW API QUOTA: Only {provider.api_requests_remaining} requests remaining!")
+
     logger.info("Update complete!")
 
 
@@ -149,6 +156,17 @@ def main() -> int:
         action="store_true",
         help="Also fetch player props (requires additional API calls)",
     )
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Clean up old historical data (keeps last 7 days)",
+    )
+    parser.add_argument(
+        "--cleanup-days",
+        type=int,
+        default=7,
+        help="Number of days of history to keep when cleaning up (default: 7)",
+    )
 
     args = parser.parse_args()
 
@@ -157,6 +175,18 @@ def main() -> int:
     try:
         logger.info(f"Loading config from {args.config}")
         config = load_config(args.config)
+
+        # Handle cleanup if requested
+        if args.cleanup:
+            storage_config = config.get("storage", {})
+            storage = OddsStorage(
+                history_path=storage_config.get("history_path", "data/history/odds_history.csv"),
+                latest_path=storage_config.get("latest_path", "data/latest/latest.csv"),
+                props_history_path=storage_config.get("props_history_path"),
+                props_latest_path=storage_config.get("props_latest_path"),
+            )
+            removed = storage.cleanup_old_history(days_to_keep=args.cleanup_days)
+            logger.info(f"Cleanup complete: removed {removed} old records")
 
         run_update(config, fetch_props=args.props)
         return 0

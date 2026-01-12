@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 import logging
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -98,6 +98,39 @@ class OddsStorage:
         with open(self.history_path, "r", newline="") as f:
             reader = csv.DictReader(f)
             return list(reader)
+
+    def cleanup_old_history(self, days_to_keep: int = 7) -> int:
+        """Remove historical records older than days_to_keep days.
+
+        This helps keep the history CSV manageable in size.
+        Returns the number of records removed.
+        """
+        history = self.load_history()
+        if not history:
+            return 0
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
+        cutoff_str = cutoff.isoformat()
+
+        # Filter to keep only recent records
+        recent_records = [
+            r for r in history
+            if r.get("timestamp_utc", "") >= cutoff_str
+        ]
+
+        removed_count = len(history) - len(recent_records)
+
+        if removed_count > 0:
+            # Rewrite the history file with only recent records
+            with open(self.history_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=OddsRow.fieldnames())
+                writer.writeheader()
+                for row in recent_records:
+                    writer.writerow(row)
+
+            logger.info(f"Cleaned up {removed_count} old records from history (keeping last {days_to_keep} days)")
+
+        return removed_count
 
     def generate_latest(self) -> int:
         """Generate the latest.csv snapshot with computed movement fields.
