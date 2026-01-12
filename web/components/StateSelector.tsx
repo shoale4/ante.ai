@@ -1,34 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getAllStates, getStateInfo, StateInfo } from "@/lib/state-legality";
-import { BOOK_NAMES } from "@/lib/book-rankings";
+import { useState } from "react";
+import { getAllStates, getStateInfo } from "@/lib/state-legality";
+import { useUserState } from "@/lib/state-context";
 
-const STATE_STORAGE_KEY = "hedj_user_state";
-
-export function useUserState() {
-  const [userState, setUserState] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STATE_STORAGE_KEY);
-    if (stored) {
-      setUserState(stored);
-    }
-    setIsLoaded(true);
-  }, []);
-
-  const setState = (abbr: string | null) => {
-    setUserState(abbr);
-    if (abbr) {
-      localStorage.setItem(STATE_STORAGE_KEY, abbr);
-    } else {
-      localStorage.removeItem(STATE_STORAGE_KEY);
-    }
-  };
-
-  return { userState, setUserState: setState, isLoaded };
-}
+// Re-export for convenience
+export { useUserState } from "@/lib/state-context";
 
 interface Props {
   compact?: boolean;
@@ -160,18 +137,4 @@ export function StateBanner() {
   }
 
   return null;
-}
-
-// Hook to filter books by state
-export function useStateFilteredBooks(books: string[]): string[] {
-  const { userState, isLoaded } = useUserState();
-
-  if (!isLoaded || !userState) return books;
-
-  const stateInfo = getStateInfo(userState);
-  if (!stateInfo || !stateInfo.legal || stateInfo.legalBooks.length === 0) {
-    return books;
-  }
-
-  return books.filter(book => stateInfo.legalBooks.includes(book.toLowerCase()));
 }

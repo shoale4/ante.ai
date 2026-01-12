@@ -38,7 +38,7 @@ export function ArbitrageClient({ games }: Props) {
       {/* Launch Promo Banner */}
       <LaunchBanner onRedeemClick={() => redeemModal.open("DABEARSCHAMPS26")} />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 animate-page-in">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6">
         {/* Arbitrage Section with Sport Groups */}
         <ArbitrageFinderBySport
           games={games}

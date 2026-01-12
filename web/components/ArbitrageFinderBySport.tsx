@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
+import { useUserState } from "./StateSelector";
+import { isBookAvailable } from "@/lib/state-legality";
 
 const SPORTS: Sport[] = ["NFL", "NBA", "NCAAB", "NHL", "MLB", "MMA", "Soccer"];
 
@@ -28,11 +30,21 @@ export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false }: Pro
   // Track expanded state per sport - all expanded by default
   const [expandedSports, setExpandedSports] = useState<Set<Sport>>(new Set(SPORTS));
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { userState } = useUserState();
+
+  // Filter arbitrage opportunities by state (both books must be available)
+  const filterArbsByState = (opps: ArbitrageOpportunity[]): ArbitrageOpportunity[] => {
+    if (!userState) return opps;
+    return opps.filter(opp =>
+      opp.legs.every(leg => isBookAvailable(userState, leg.book))
+    );
+  };
 
   // Group opportunities by sport
   const { opportunitiesBySport, totalCount, topProfit } = useMemo(() => {
     const allOpps = findAllArbitrage(games);
-    const sorted = allOpps.sort((a, b) => b.profit - a.profit);
+    const filtered = filterArbsByState(allOpps);
+    const sorted = filtered.sort((a, b) => b.profit - a.profit);
 
     const grouped = new Map<Sport, ArbitrageOpportunity[]>();
     SPORTS.forEach(sport => grouped.set(sport, []));
@@ -51,10 +63,11 @@ export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false }: Pro
 
     return {
       opportunitiesBySport: grouped,
-      totalCount: allOpps.length,
+      totalCount: sorted.length,
       topProfit: sorted[0]?.profit || 0,
     };
-  }, [games]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [games, userState]);
 
   const toggleSport = (sport: Sport) => {
     setExpandedSports(prev => {

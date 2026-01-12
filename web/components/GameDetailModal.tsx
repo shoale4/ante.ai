@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { GameOdds } from "@/lib/types";
 import { LineMovementChart } from "./LineMovementChart";
 import { PlayerPropsSection } from "./PlayerPropsSection";
 import { BookName } from "./BookLink";
 import { calculateHold } from "@/lib/arbitrage";
 import { usePro } from "@/lib/pro-context";
+import { useUserState } from "./StateSelector";
+import { isBookAvailable } from "@/lib/state-legality";
 
 interface Props {
   game: GameOdds;
@@ -27,7 +30,20 @@ const tabs: { id: TabType; label: string }[] = [
 
 export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>("odds");
+  const [mounted, setMounted] = useState(false);
   const { isPro } = usePro();
+  const { userState } = useUserState();
+
+  // Filter function to check if book is available in user's state
+  const filterByState = <T extends { book: string }>(odds: T[]): T[] => {
+    if (!userState) return odds;
+    return odds.filter(o => isBookAvailable(userState, o.book));
+  };
+
+  // Ensure we only render portal on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -43,133 +59,144 @@ export function GameDetailModal({ game, isOpen, onClose, onWaitlist }: Props) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const gameTime = new Date(game.eventStartTime);
   const dateStr = gameTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   const timeStr = gameTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-  return (
-    <div className="fixed inset-0 z-50">
+  const modalContent = (
+    <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
 
-      {/* Modal Container - Centers on all screens */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        {/* Modal */}
-        <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden bg-white rounded-2xl shadow-2xl flex flex-col">
-        {/* Header - Compact */}
-        <div className="flex-shrink-0 border-b border-gray-100 px-4 pt-2 pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                <span>{game.sport}</span>
-                <span>·</span>
-                <span>{dateStr} {timeStr}</span>
+      {/* Modal - fixed center */}
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none"
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
+        <div
+          className="relative w-full max-w-lg max-h-[85vh] overflow-hidden bg-white rounded-2xl shadow-2xl flex flex-col pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex-shrink-0 border-b border-gray-100 px-4 pt-3 pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                  <span>{game.sport}</span>
+                  <span>·</span>
+                  <span>{dateStr} {timeStr}</span>
+                </div>
+                <h2 className="text-[15px] font-semibold text-gray-900 mt-0.5 truncate">
+                  {game.awayTeam} @ {game.homeTeam}
+                </h2>
               </div>
-              <h2 className="text-[15px] font-semibold text-gray-900 mt-0.5 truncate">
-                {game.awayTeam} @ {game.homeTeam}
-              </h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center flex-shrink-0 active:scale-95 transition-all"
-            >
-              <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Tabs - Compact pills */}
-          <div className="flex gap-1 mt-3 overflow-x-auto scrollbar-hide -mx-1 px-1">
-            {tabs.map((tab) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap active:scale-95 ${
-                  activeTab === tab.id
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                onClick={onClose}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center flex-shrink-0"
               >
-                {tab.label}
+                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            ))}
+            </div>
+            {/* Tabs */}
+            <div className="flex gap-1 mt-3 overflow-x-auto scrollbar-hide -mx-1 px-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {activeTab === "odds" && (
-            <>
-              <CompactMarket
-                title="Moneyline"
-                homeTeam={game.homeTeam}
-                awayTeam={game.awayTeam}
-                homeOdds={game.markets.moneyline.filter(o => o.outcome === "home")}
-                awayOdds={game.markets.moneyline.filter(o => o.outcome === "away")}
-              />
-              <CompactMarket
-                title="Spread"
-                homeTeam={game.homeTeam}
-                awayTeam={game.awayTeam}
-                homeOdds={game.markets.spread.filter(o => o.outcome === "home")}
-                awayOdds={game.markets.spread.filter(o => o.outcome === "away")}
-                showLine
-              />
-              <CompactTotal
-                overOdds={game.markets.total.filter(o => o.outcome === "over")}
-                underOdds={game.markets.total.filter(o => o.outcome === "under")}
-              />
-            </>
-          )}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {activeTab === "odds" && (
+              <>
+                <CompactMarket
+                  title="Moneyline"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                  homeOdds={filterByState(game.markets.moneyline.filter(o => o.outcome === "home"))}
+                  awayOdds={filterByState(game.markets.moneyline.filter(o => o.outcome === "away"))}
+                />
+                <CompactMarket
+                  title="Spread"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                  homeOdds={filterByState(game.markets.spread.filter(o => o.outcome === "home"))}
+                  awayOdds={filterByState(game.markets.spread.filter(o => o.outcome === "away"))}
+                  showLine
+                />
+                <CompactTotal
+                  overOdds={filterByState(game.markets.total.filter(o => o.outcome === "over"))}
+                  underOdds={filterByState(game.markets.total.filter(o => o.outcome === "under"))}
+                />
+              </>
+            )}
 
-          {activeTab === "spread" && (
-            <>
-              <CompactMarket
-                title="Spread"
-                homeTeam={game.homeTeam}
-                awayTeam={game.awayTeam}
-                homeOdds={game.markets.spread.filter(o => o.outcome === "home")}
-                awayOdds={game.markets.spread.filter(o => o.outcome === "away")}
-                showLine
-              />
-              <ChartSection eventId={game.eventId} marketType="spread" homeTeam={game.homeTeam} awayTeam={game.awayTeam} />
-            </>
-          )}
+            {activeTab === "spread" && (
+              <>
+                <CompactMarket
+                  title="Spread"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                  homeOdds={filterByState(game.markets.spread.filter(o => o.outcome === "home"))}
+                  awayOdds={filterByState(game.markets.spread.filter(o => o.outcome === "away"))}
+                  showLine
+                />
+                <ChartSection eventId={game.eventId} marketType="spread" homeTeam={game.homeTeam} awayTeam={game.awayTeam} />
+              </>
+            )}
 
-          {activeTab === "ml" && (
-            <>
-              <CompactMarket
-                title="Moneyline"
-                homeTeam={game.homeTeam}
-                awayTeam={game.awayTeam}
-                homeOdds={game.markets.moneyline.filter(o => o.outcome === "home")}
-                awayOdds={game.markets.moneyline.filter(o => o.outcome === "away")}
-              />
-              <ChartSection eventId={game.eventId} marketType="moneyline" homeTeam={game.homeTeam} awayTeam={game.awayTeam} />
-            </>
-          )}
+            {activeTab === "ml" && (
+              <>
+                <CompactMarket
+                  title="Moneyline"
+                  homeTeam={game.homeTeam}
+                  awayTeam={game.awayTeam}
+                  homeOdds={filterByState(game.markets.moneyline.filter(o => o.outcome === "home"))}
+                  awayOdds={filterByState(game.markets.moneyline.filter(o => o.outcome === "away"))}
+                />
+                <ChartSection eventId={game.eventId} marketType="moneyline" homeTeam={game.homeTeam} awayTeam={game.awayTeam} />
+              </>
+            )}
 
-          {activeTab === "total" && (
-            <>
-              <CompactTotal
-                overOdds={game.markets.total.filter(o => o.outcome === "over")}
-                underOdds={game.markets.total.filter(o => o.outcome === "under")}
-              />
-              <ChartSection eventId={game.eventId} marketType="total" homeTeam={game.homeTeam} awayTeam={game.awayTeam} />
-            </>
-          )}
+            {activeTab === "total" && (
+              <>
+                <CompactTotal
+                  overOdds={filterByState(game.markets.total.filter(o => o.outcome === "over"))}
+                  underOdds={filterByState(game.markets.total.filter(o => o.outcome === "under"))}
+                />
+                <ChartSection eventId={game.eventId} marketType="total" homeTeam={game.homeTeam} awayTeam={game.awayTeam} />
+              </>
+            )}
 
-          {activeTab === "props" && (
-            <PlayerPropsSection eventId={game.eventId} isPro={isPro} onWaitlist={onWaitlist} />
-          )}
-        </div>
+            {activeTab === "props" && (
+              <PlayerPropsSection eventId={game.eventId} isPro={isPro} onWaitlist={onWaitlist} />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
+
+  // Use createPortal to render outside parent DOM tree
+  return createPortal(modalContent, document.body);
 }
 
 // Chart section wrapper

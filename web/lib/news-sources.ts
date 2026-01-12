@@ -1,12 +1,13 @@
 import { NewsItem } from "./news";
 import { fetchAllESPNNews } from "./espn-news";
 
-type SportType = "NFL" | "NBA" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
+type SportType = "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
 
 // CBS Sports RSS endpoints
 const CBS_RSS_FEEDS: Record<string, string> = {
   NFL: "https://www.cbssports.com/rss/headlines/nfl/",
   NBA: "https://www.cbssports.com/rss/headlines/nba/",
+  NCAAB: "https://www.cbssports.com/rss/headlines/college-basketball/",
   MLB: "https://www.cbssports.com/rss/headlines/mlb/",
   NHL: "https://www.cbssports.com/rss/headlines/nhl/",
 };
@@ -195,6 +196,7 @@ function extractTeams(text: string, sport: SportType): string[] {
   const teamLists: Record<SportType, string[]> = {
     NFL: ["Cardinals", "Falcons", "Ravens", "Bills", "Panthers", "Bears", "Bengals", "Browns", "Cowboys", "Broncos", "Lions", "Packers", "Texans", "Colts", "Jaguars", "Chiefs", "Raiders", "Chargers", "Rams", "Dolphins", "Vikings", "Patriots", "Saints", "Giants", "Jets", "Eagles", "Steelers", "49ers", "Seahawks", "Buccaneers", "Titans", "Commanders"],
     NBA: ["Hawks", "Celtics", "Nets", "Hornets", "Bulls", "Cavaliers", "Mavericks", "Nuggets", "Pistons", "Warriors", "Rockets", "Pacers", "Clippers", "Lakers", "Grizzlies", "Heat", "Bucks", "Timberwolves", "Pelicans", "Knicks", "Thunder", "Magic", "76ers", "Suns", "Trail Blazers", "Kings", "Spurs", "Raptors", "Jazz", "Wizards"],
+    NCAAB: ["Duke", "North Carolina", "Kentucky", "Kansas", "UCLA", "Gonzaga", "UConn", "Houston", "Purdue", "Tennessee", "Arizona", "Alabama", "Auburn", "Baylor", "Texas", "Michigan", "Michigan State", "Indiana", "Illinois", "Iowa State", "Iowa", "Wisconsin", "Ohio State", "Villanova", "Creighton", "Marquette"],
     MLB: ["Diamondbacks", "Braves", "Orioles", "Red Sox", "Cubs", "White Sox", "Reds", "Guardians", "Rockies", "Tigers", "Astros", "Royals", "Angels", "Dodgers", "Marlins", "Brewers", "Twins", "Mets", "Yankees", "Athletics", "Phillies", "Pirates", "Padres", "Giants", "Mariners", "Cardinals", "Rays", "Rangers", "Blue Jays", "Nationals"],
     NHL: ["Ducks", "Coyotes", "Bruins", "Sabres", "Flames", "Hurricanes", "Blackhawks", "Avalanche", "Blue Jackets", "Stars", "Red Wings", "Oilers", "Panthers", "Kings", "Wild", "Canadiens", "Predators", "Devils", "Islanders", "Rangers", "Senators", "Flyers", "Penguins", "Sharks", "Kraken", "Blues", "Lightning", "Maple Leafs", "Canucks", "Golden Knights", "Capitals", "Jets"],
     MMA: ["UFC", "Jones", "Makhachev", "Adesanya", "Volkanovski", "Edwards", "Strickland"],
@@ -216,7 +218,7 @@ function extractTeams(text: string, sport: SportType): string[] {
 async function fetchCBSSportsNews(): Promise<NewsItem[]> {
   const allNews: NewsItem[] = [];
 
-  const sports: SportType[] = ["NFL", "NBA", "NHL"];
+  const sports: SportType[] = ["NFL", "NBA", "NCAAB", "NHL"];
 
   await Promise.all(
     sports.map(async (sport) => {
@@ -252,14 +254,14 @@ async function fetchYahooSportsNews(): Promise<NewsItem[]> {
 
 // Main function to fetch all news from all sources
 export async function fetchAllNews(): Promise<NewsItem[]> {
-  const [espnNews, cbsNews, yahooNews] = await Promise.all([
+  // Note: Yahoo RSS feeds are returning 404, disabled for now
+  const [espnNews, cbsNews] = await Promise.all([
     fetchAllESPNNews(),
     fetchCBSSportsNews(),
-    fetchYahooSportsNews(),
   ]);
 
   // Combine all news
-  const allNews = [...espnNews, ...cbsNews, ...yahooNews];
+  const allNews = [...espnNews, ...cbsNews];
 
   // Sort by published date (most recent first)
   allNews.sort((a, b) => {

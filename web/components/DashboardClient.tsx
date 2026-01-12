@@ -195,7 +195,7 @@ export function DashboardClient({ games, movements, news }: Props) {
       {/* Launch Promo Banner */}
       <LaunchBanner onRedeemClick={() => redeemModal.open("DABEARSCHAMPS26")} />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 animate-page-in">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="glass-card p-3 text-center">

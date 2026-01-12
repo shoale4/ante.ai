@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
+import { useUserState } from "./StateSelector";
+import { isBookAvailable } from "@/lib/state-legality";
 
 const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
@@ -24,11 +26,17 @@ interface Props {
 
 export function ArbitrageFinder({ games, onWaitlist, isPro = false }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { userState } = useUserState();
 
   const allOpportunities = useMemo(() => {
     const opps = findAllArbitrage(games);
-    return opps.sort((a, b) => b.profit - a.profit);
-  }, [games]);
+    // Filter by state if user has selected one
+    const filtered = userState
+      ? opps.filter(opp => opp.legs.every(leg => isBookAvailable(userState, leg.book)))
+      : opps;
+    return filtered.sort((a, b) => b.profit - a.profit);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [games, userState]);
 
   const topProfit = allOpportunities[0]?.profit || 0;
 

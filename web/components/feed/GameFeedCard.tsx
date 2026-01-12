@@ -8,6 +8,8 @@ import { NewsItem } from "@/lib/news";
 import { GameDetailModal } from "../GameDetailModal";
 import { WeatherBadge } from "../WeatherBadge";
 import { getTeamLogo } from "@/lib/teamLogos";
+import { useUserState } from "../StateSelector";
+import { isBookAvailable } from "@/lib/state-legality";
 
 const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
@@ -28,6 +30,13 @@ interface Props {
 
 export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const { userState } = useUserState();
+
+  // Filter function to check if book is available in user's state
+  const filterByState = <T extends { book: string }>(odds: T[]): T[] => {
+    if (!userState) return odds;
+    return odds.filter(o => isBookAvailable(userState, o.book));
+  };
 
   const gameTime = new Date(game.eventStartTime);
   const isToday = isSameDay(gameTime, new Date());
@@ -36,15 +45,15 @@ export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Pr
   const dateLabel = isToday ? "Today" : isTomorrow ? "Tmrw" : gameTime.toLocaleDateString("en-US", { weekday: "short" });
   const timeLabel = gameTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-  // Get best moneyline odds
-  const homeML = game.markets.moneyline.filter((o) => o.outcome === "home");
-  const awayML = game.markets.moneyline.filter((o) => o.outcome === "away");
+  // Get best moneyline odds (filtered by state)
+  const homeML = filterByState(game.markets.moneyline.filter((o) => o.outcome === "home"));
+  const awayML = filterByState(game.markets.moneyline.filter((o) => o.outcome === "away"));
   const bestHomeML = findBest(homeML);
   const bestAwayML = findBest(awayML);
 
-  // Get spread
-  const homeSpread = game.markets.spread.find((o) => o.outcome === "home");
-  const awaySpread = game.markets.spread.find((o) => o.outcome === "away");
+  // Get spread (filtered by state)
+  const homeSpread = filterByState(game.markets.spread.filter((o) => o.outcome === "home"))[0];
+  const awaySpread = filterByState(game.markets.spread.filter((o) => o.outcome === "away"))[0];
 
   // Smart team name shortening
   const awayShort = shortenTeamName(game.awayTeam, game.sport);
@@ -65,7 +74,7 @@ export function GameFeedCard({ game, weather, relatedNews = [], onWaitlist }: Pr
             setIsOpen(true);
           }
         }}
-        className="bg-white rounded-xl border border-gray-100 hover:border-gray-200 p-3 cursor-pointer active:scale-[0.99] transition-all"
+        className="bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-md p-3 cursor-pointer transition-all"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-2">

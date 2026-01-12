@@ -25,11 +25,12 @@ interface ESPNNewsResponse {
   articles: ESPNNewsArticle[];
 }
 
-type SportType = "NFL" | "NBA" | "MLB" | "NHL" | "MMA" | "Soccer";
+type SportType = "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer";
 
 const SPORT_ENDPOINTS: Record<SportType, string> = {
   NFL: `${ESPN_API_BASE}/football/nfl/news`,
   NBA: `${ESPN_API_BASE}/basketball/nba/news`,
+  NCAAB: `${ESPN_API_BASE}/basketball/mens-college-basketball/news`,
   MLB: `${ESPN_API_BASE}/baseball/mlb/news`,
   NHL: `${ESPN_API_BASE}/hockey/nhl/news`,
   MMA: `${ESPN_API_BASE}/mma/ufc/news`,
@@ -87,9 +88,10 @@ export async function fetchESPNNews(sport: SportType): Promise<NewsItem[]> {
 }
 
 export async function fetchAllESPNNews(): Promise<NewsItem[]> {
-  const [nflNews, nbaNews, mlbNews, nhlNews, mmaNews, soccerNews] = await Promise.all([
+  const [nflNews, nbaNews, ncaabNews, mlbNews, nhlNews, mmaNews, soccerNews] = await Promise.all([
     fetchESPNNews("NFL"),
     fetchESPNNews("NBA"),
+    fetchESPNNews("NCAAB"),
     fetchESPNNews("MLB"),
     fetchESPNNews("NHL"),
     fetchESPNNews("MMA"),
@@ -97,7 +99,7 @@ export async function fetchAllESPNNews(): Promise<NewsItem[]> {
   ]);
 
   // Combine and sort by published date (most recent first)
-  return [...nflNews, ...nbaNews, ...mlbNews, ...nhlNews, ...mmaNews, ...soccerNews].sort(
+  return [...nflNews, ...nbaNews, ...ncaabNews, ...mlbNews, ...nhlNews, ...mmaNews, ...soccerNews].sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
 }
@@ -217,6 +219,19 @@ function extractTeams(text: string, sport: SportType): string[] {
     "Trail Blazers", "Kings", "Spurs", "Raptors", "Jazz", "Wizards"
   ];
 
+  // Top NCAAB teams (power conferences + historically strong programs)
+  const ncaabTeams = [
+    "Duke", "North Carolina", "Kentucky", "Kansas", "UCLA", "Gonzaga",
+    "UConn", "Houston", "Purdue", "Tennessee", "Arizona", "Alabama",
+    "Auburn", "Baylor", "Texas", "Michigan", "Michigan State", "Indiana",
+    "Illinois", "Iowa State", "Iowa", "Wisconsin", "Ohio State", "Villanova",
+    "Creighton", "Marquette", "Xavier", "Butler", "Cincinnati", "Louisville",
+    "Florida", "Arkansas", "LSU", "Missouri", "Oklahoma", "Texas Tech",
+    "Virginia", "NC State", "Syracuse", "Georgetown", "St. John's",
+    "Providence", "Seton Hall", "San Diego State", "Nevada", "BYU",
+    "Colorado", "Oregon", "Stanford", "USC", "Arizona State", "Utah"
+  ];
+
   const mlbTeams = [
     "Diamondbacks", "Braves", "Orioles", "Red Sox", "Cubs", "White Sox",
     "Reds", "Guardians", "Rockies", "Tigers", "Astros", "Royals",
@@ -252,6 +267,7 @@ function extractTeams(text: string, sport: SportType): string[] {
   const teamLists: Record<SportType, string[]> = {
     NFL: nflTeams,
     NBA: nbaTeams,
+    NCAAB: ncaabTeams,
     MLB: mlbTeams,
     NHL: nhlTeams,
     MMA: mmaFighters,
