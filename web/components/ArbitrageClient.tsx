@@ -67,6 +67,7 @@ export function ArbitrageClient({ games }: Props) {
         isOpen={redeemModal.isOpen}
         onClose={redeemModal.close}
         initialCode={redeemModal.initialCode}
+        onWaitlist={() => waitlistModal.open("promo-maxed")}
       />
     </>
   );

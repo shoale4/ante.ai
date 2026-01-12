@@ -135,6 +135,7 @@ export function HomeClient({ games, movements, news, weatherData }: Props) {
         isOpen={redeemModal.isOpen}
         onClose={redeemModal.close}
         initialCode={redeemModal.initialCode}
+        onWaitlist={() => waitlistModal.open("promo-maxed")}
       />
     </>
   );

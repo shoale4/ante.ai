@@ -96,7 +96,10 @@ export async function POST(request: NextRequest) {
       const maxUses = invite.maxUses ? parseInt(String(invite.maxUses), 10) : null;
       if (maxUses && currentUses >= maxUses) {
         return NextResponse.json(
-          { error: "This promo code has reached its maximum uses" },
+          {
+            error: "This code has been fully claimed! Join the waitlist to get notified when we open up more spots.",
+            code: "MAX_USES_REACHED"
+          },
           { status: 400 }
         );
       }

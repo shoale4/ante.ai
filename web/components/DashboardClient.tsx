@@ -472,6 +472,7 @@ export function DashboardClient({ games, movements, news }: Props) {
         isOpen={redeemModal.isOpen}
         onClose={redeemModal.close}
         initialCode={redeemModal.initialCode}
+        onWaitlist={() => waitlistModal.open("promo-maxed")}
       />
 
       {/* Floating Context Bar - Mobile Only */}

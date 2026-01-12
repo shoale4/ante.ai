@@ -7,17 +7,19 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   initialCode?: string;
+  onWaitlist?: () => void;
 }
 
 function isValidEmail(email: string): boolean {
   return email.includes("@") && email.includes(".");
 }
 
-export function RedeemCodeModal({ isOpen, onClose, initialCode = "" }: Props) {
+export function RedeemCodeModal({ isOpen, onClose, initialCode = "", onWaitlist }: Props) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState(initialCode);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMaxedOut, setIsMaxedOut] = useState(false);
   const [success, setSuccess] = useState(false);
   const { activatePro } = usePro();
 
@@ -26,6 +28,7 @@ export function RedeemCodeModal({ isOpen, onClose, initialCode = "" }: Props) {
       setEmail("");
       setCode(initialCode || "");
       setError(null);
+      setIsMaxedOut(false);
       setSuccess(false);
     }
   }, [isOpen, initialCode]);
@@ -70,6 +73,9 @@ export function RedeemCodeModal({ isOpen, onClose, initialCode = "" }: Props) {
 
       if (!response.ok) {
         setError(data.error || "Invalid code");
+        if (data.code === "MAX_USES_REACHED") {
+          setIsMaxedOut(true);
+        }
         return;
       }
 
@@ -167,7 +173,21 @@ export function RedeemCodeModal({ isOpen, onClose, initialCode = "" }: Props) {
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-500 text-center">{error}</p>
+                  <div className="text-center space-y-2">
+                    <p className={`text-sm ${isMaxedOut ? "text-gray-600" : "text-red-500"}`}>{error}</p>
+                    {isMaxedOut && onWaitlist && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onWaitlist();
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200 transition-colors"
+                      >
+                        Join Waitlist
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 <button
