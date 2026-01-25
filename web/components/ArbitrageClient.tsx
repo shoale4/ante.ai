@@ -14,9 +14,10 @@ import { isBookAvailable } from "@/lib/state-legality";
 
 interface Props {
   games: GameOdds[];
+  lastUpdated: string | null;
 }
 
-export function ArbitrageClient({ games }: Props) {
+export function ArbitrageClient({ games, lastUpdated }: Props) {
   const [globalSport, setGlobalSport] = useState<Sport | "all">("all");
   const waitlistModal = useWaitlistModal();
   const redeemModal = useRedeemModal();
@@ -57,6 +58,7 @@ export function ArbitrageClient({ games }: Props) {
           games={games}
           onWaitlist={() => waitlistModal.open("arbitrage")}
           isPro={isPro}
+          lastUpdated={lastUpdated}
         />
       </div>
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { GameOdds, Sport } from "@/lib/types";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 import { useUserState } from "./StateSelector";
 import { isBookAvailable } from "@/lib/state-legality";
+import { refreshArbitrageData } from "@/app/actions";
 
 const SPORTS: Sport[] = ["NFL", "NBA", "NCAAB", "NHL", "MLB", "MMA", "Soccer"];
 
@@ -24,9 +26,31 @@ interface Props {
   games: GameOdds[];
   onWaitlist?: () => void;
   isPro?: boolean;
+  lastUpdated?: string | null;
 }
 
-export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false }: Props) {
+// Format relative time (e.g., "2 min ago")
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 1) return "just now";
+  if (diffMins === 1) return "1 min ago";
+  if (diffMins < 60) return `${diffMins} min ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours === 1) return "1 hour ago";
+  if (diffHours < 24) return `${diffHours} hours ago`;
+
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false, lastUpdated }: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [justRefreshed, setJustRefreshed] = useState(false);
   // Track expanded state per sport - all expanded by default
   const [expandedSports, setExpandedSports] = useState<Set<Sport>>(new Set(SPORTS));
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -98,10 +122,63 @@ export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false }: Pro
           </div>
           <div>
             <h3 className="font-semibold text-sm text-gray-900">Arbitrage Scanner</h3>
-            <p className="text-[11px] text-gray-500">Guaranteed profit opportunities</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[11px] text-gray-500">Guaranteed profit opportunities</p>
+              {lastUpdated && (
+                <>
+                  <span className="text-[11px] text-gray-300">·</span>
+                  <span className="text-[11px] text-gray-400">{formatRelativeTime(lastUpdated)}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          {isPro && (
+            <button
+              onClick={() => startTransition(async () => {
+                await refreshArbitrageData();
+                router.refresh();
+                setJustRefreshed(true);
+                setTimeout(() => setJustRefreshed(false), 2000);
+              })}
+              disabled={isPending}
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all text-xs font-medium ${
+                justRefreshed
+                  ? "bg-green-100 text-green-600"
+                  : isPending
+                  ? "bg-gray-100 text-gray-400"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+              }`}
+              title="Refresh data"
+            >
+              {justRefreshed ? (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Refreshed</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className={`w-3.5 h-3.5 ${isPending ? "animate-spin" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
+          )}
           {totalCount > 0 && (
             <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">
               +{topProfit.toFixed(1)}% best

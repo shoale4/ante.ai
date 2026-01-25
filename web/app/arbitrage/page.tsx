@@ -22,7 +22,7 @@ export default async function ArbitragePage() {
       <Header games={games} lastUpdated={lastUpdated} />
 
       {/* Main Content */}
-      <ArbitrageClient games={games} />
+      <ArbitrageClient games={games} lastUpdated={lastUpdated} />
 
       {/* Footer */}
       <footer className="border-t border-gray-200/60 mt-8 bg-white/50">
