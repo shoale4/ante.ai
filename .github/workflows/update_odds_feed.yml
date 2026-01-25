@@ -2,9 +2,11 @@ name: Update Odds Feed
 
 on:
   schedule:
-    # Run every hour to balance freshness vs API costs
-    # 8 sports × 3 markets = 24 credits/run × 24 runs/day = 576 credits/day
-    - cron: "0 * * * *"
+    # Run every 40 minutes (36 runs/day)
+    # 5 sports × 3 markets = 15 credits/run × 36 runs/day = 540/day = 16,200/month
+    - cron: "0 */2 * * *"     # :00 every even hour
+    - cron: "40 */2 * * *"    # :40 every even hour
+    - cron: "20 1-23/2 * * *" # :20 every odd hour
   workflow_dispatch:
     # Allow manual triggers
 
