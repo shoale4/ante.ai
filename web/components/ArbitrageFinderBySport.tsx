@@ -227,6 +227,7 @@ export function ArbitrageFinderBySport({ games, onWaitlist, isPro = false }: Pro
                             onToggle={() => setExpandedId(
                               expandedId === `${opp.gameId}-${opp.market}` ? null : `${opp.gameId}-${opp.market}`
                             )}
+                            isPro={isPro}
                           />
                         ))}
                       </div>
@@ -271,11 +272,13 @@ function formatGameTime(dateStr: string): string {
 function ArbRow({
   opportunity,
   isExpanded,
-  onToggle
+  onToggle,
+  isPro
 }: {
   opportunity: ArbitrageOpportunity;
   isExpanded: boolean;
   onToggle: () => void;
+  isPro: boolean;
 }) {
   return (
     <div>
@@ -306,14 +309,53 @@ function ArbRow({
         </svg>
       </button>
 
-      {isExpanded && <BetDetails opportunity={opportunity} />}
+      {isExpanded && <BetDetails opportunity={opportunity} isPro={isPro} />}
     </div>
   );
 }
 
+// Save bets to localStorage
+function trackBets(opportunity: ArbitrageOpportunity, stake: number) {
+  const STORAGE_KEY = "hedj_tracked_bets";
+  const multiplier = stake / 100;
+
+  // Load existing bets
+  let bets = [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    bets = stored ? JSON.parse(stored) : [];
+  } catch {
+    bets = [];
+  }
+
+  // Create bet entries for each leg
+  const newBets = opportunity.legs.map((leg, idx) => ({
+    id: Date.now().toString(36) + Math.random().toString(36).substr(2) + idx,
+    createdAt: new Date().toISOString(),
+    type: "arb" as const,
+    status: "pending" as const,
+    sport: opportunity.sport,
+    event: `${opportunity.awayTeam} @ ${opportunity.homeTeam}`,
+    eventDate: opportunity.eventStartTime.split("T")[0],
+    market: opportunity.market,
+    selection: leg.side,
+    book: leg.book,
+    odds: leg.odds,
+    stake: Math.round(leg.stake * multiplier * 100) / 100,
+    notes: `Arb leg ${idx + 1}/${opportunity.legs.length} - ${opportunity.profit.toFixed(1)}% ROI`,
+  }));
+
+  // Add to beginning of list
+  const updatedBets = [...newBets, ...bets];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedBets));
+
+  return newBets.length;
+}
+
 // Bet details component
-function BetDetails({ opportunity }: { opportunity: ArbitrageOpportunity }) {
+function BetDetails({ opportunity, isPro }: { opportunity: ArbitrageOpportunity; isPro: boolean }) {
   const [stake, setStake] = useState(100);
+  const [tracked, setTracked] = useState(false);
   const multiplier = stake / 100;
 
   const handleStakeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -397,20 +439,51 @@ function BetDetails({ opportunity }: { opportunity: ArbitrageOpportunity }) {
         </div>
       </div>
 
-      {/* Share Button */}
-      <div className="mt-3 pt-3 border-t border-gray-200">
+      {/* Action Buttons */}
+      <div className="mt-3 pt-3 border-t border-gray-200 flex gap-2">
+        {isPro && (
+          <button
+            onClick={() => {
+              trackBets(opportunity, stake);
+              setTracked(true);
+              setTimeout(() => setTracked(false), 2000);
+            }}
+            disabled={tracked}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium rounded-lg transition-all active:scale-[0.98] ${
+              tracked
+                ? "bg-green-500 text-white"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+          >
+            {tracked ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Tracked!
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Track Bets
+              </>
+            )}
+          </button>
+        )}
         <button
           onClick={() => {
             const text = `🔥 ${opportunity.profit.toFixed(1)}% arb on ${opportunity.awayTeam} @ ${opportunity.homeTeam}\n\n${opportunity.legs.map(l => `${l.side} @ ${l.book} (${l.odds > 0 ? '+' : ''}${l.odds})`).join('\n')}\n\nFound on hedj.app`;
             const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank', 'width=550,height=420');
           }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium rounded-lg bg-black text-white hover:bg-gray-800 active:scale-[0.98] transition-all"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium rounded-lg bg-black text-white hover:bg-gray-800 active:scale-[0.98] transition-all"
         >
           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
           </svg>
-          Share on X
+          Share
         </button>
       </div>
     </div>

@@ -1,0 +1,150 @@
+{
+  "books": {
+    "fanduel": {
+      "displayName": "FanDuel",
+      "supportsOnline": true,
+      "tier": 1,
+      "states": ["AZ", "AR", "CO", "CT", "DE", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MS", "NE", "NV", "NJ", "NY", "NC", "OH", "PA", "RI", "TN", "VT", "VA", "WV", "WY", "DC"],
+      "notes": "Major US book, generally fast odds updates"
+    },
+    "draftkings": {
+      "displayName": "DraftKings",
+      "supportsOnline": true,
+      "tier": 1,
+      "states": ["AZ", "AR", "CO", "CT", "DE", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "NE", "NV", "NH", "NJ", "NY", "NC", "OH", "OR", "PA", "RI", "TN", "VT", "VA", "WV", "WY", "DC"],
+      "notes": "Major US book, generally fast odds updates"
+    },
+    "betmgm": {
+      "displayName": "BetMGM",
+      "supportsOnline": true,
+      "tier": 1,
+      "states": ["AZ", "AR", "CO", "DE", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MS", "NE", "NV", "NH", "NJ", "NY", "NC", "OH", "OR", "PA", "RI", "TN", "VT", "VA", "WV", "WY", "DC"],
+      "notes": "Major US book, MGM partnership"
+    },
+    "caesars": {
+      "displayName": "Caesars Sportsbook",
+      "supportsOnline": true,
+      "tier": 1,
+      "states": ["AZ", "CO", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MS", "NV", "NJ", "NY", "NC", "OH", "PA", "TN", "VA", "WV", "DC"],
+      "notes": "Major US book, formerly William Hill"
+    },
+    "pointsbetus": {
+      "displayName": "PointsBet",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["CO", "IL", "IN", "IA", "KS", "MD", "MI", "NJ", "NY", "OH", "PA", "VA", "WV"],
+      "notes": "Australian-based, known for unique betting options"
+    },
+    "bet365": {
+      "displayName": "bet365",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["CO", "IN", "IA", "KY", "LA", "NJ", "OH", "VA"],
+      "notes": "UK-based international book, limited US presence"
+    },
+    "betonlineag": {
+      "displayName": "BetOnline",
+      "supportsOnline": true,
+      "tier": 3,
+      "states": [],
+      "notes": "Offshore book, accepts US players but not regulated. Use with caution."
+    },
+    "bovada": {
+      "displayName": "Bovada",
+      "supportsOnline": true,
+      "tier": 3,
+      "states": [],
+      "notes": "Offshore book, accepts US players but not regulated. Use with caution."
+    },
+    "betrivers": {
+      "displayName": "BetRivers",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["AZ", "CO", "IL", "IN", "IA", "KS", "KY", "LA", "MD", "MA", "MI", "NJ", "NY", "NC", "OH", "PA", "TN", "VA", "WV"],
+      "notes": "Rush Street Interactive brand"
+    },
+    "espnbet": {
+      "displayName": "ESPN BET",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["AZ", "CO", "IL", "IN", "IA", "KS", "KY", "LA", "MD", "MA", "MI", "NJ", "NY", "NC", "OH", "PA", "TN", "VA", "WV"],
+      "notes": "Penn Entertainment partnership with ESPN"
+    },
+    "wynnbet": {
+      "displayName": "WynnBET",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["AZ", "CO", "IN", "MA", "MI", "NV", "NJ", "NY", "PA"],
+      "notes": "Wynn Resorts brand"
+    },
+    "superbook": {
+      "displayName": "SuperBook",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["AZ", "CO", "IA", "NV", "NJ", "TN"],
+      "notes": "Las Vegas-based sharp book"
+    },
+    "williamhill_us": {
+      "displayName": "William Hill",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": [],
+      "notes": "Now part of Caesars in most US markets"
+    },
+    "unibet_us": {
+      "displayName": "Unibet",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["AZ", "IN", "IA", "NJ", "PA", "VA"],
+      "notes": "Kindred Group brand"
+    },
+    "unibet": {
+      "displayName": "Unibet",
+      "supportsOnline": true,
+      "tier": 2,
+      "states": ["AZ", "IN", "IA", "NJ", "PA", "VA"],
+      "notes": "Kindred Group brand"
+    },
+    "foxbet": {
+      "displayName": "FOX Bet",
+      "supportsOnline": false,
+      "tier": 3,
+      "states": [],
+      "notes": "Discontinued - no longer operational"
+    },
+    "barstool": {
+      "displayName": "Barstool Sportsbook",
+      "supportsOnline": false,
+      "tier": 3,
+      "states": [],
+      "notes": "Rebranded to ESPN BET"
+    }
+  },
+  "tiers": {
+    "1": {
+      "description": "Major regulated US sportsbooks",
+      "trustLevel": "high",
+      "notes": "Fast updates, reliable payouts, full regulation"
+    },
+    "2": {
+      "description": "Secondary regulated US sportsbooks",
+      "trustLevel": "medium-high",
+      "notes": "Good reliability, may have slower updates"
+    },
+    "3": {
+      "description": "Offshore or discontinued books",
+      "trustLevel": "low",
+      "notes": "Use with caution, less reliable data"
+    }
+  },
+  "defaults": {
+    "blockedBooks": ["foxbet", "barstool"],
+    "warningBooks": ["betonlineag", "bovada"],
+    "freshnessByTier": {
+      "1": 180,
+      "2": 240,
+      "3": 300
+    }
+  },
+  "lastUpdated": "2026-01-24"
+}

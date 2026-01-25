@@ -12,6 +12,8 @@ import { BookLeaderboard } from "@/components/BookLeaderboard";
 import { LaunchBanner } from "@/components/LaunchBanner";
 import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 import { usePro } from "@/lib/pro-context";
+import { useUserState } from "@/components/StateSelector";
+import { isBookAvailable } from "@/lib/state-legality";
 
 interface Props {
   games: GameOdds[];
@@ -61,9 +63,22 @@ export function DashboardClient({ games, movements, news }: Props) {
   const waitlistModal = useWaitlistModal();
   const redeemModal = useRedeemModal();
   const { isPro } = usePro();
+  const { userState } = useUserState();
 
-  // Calculate all arbs
-  const allArbs = useMemo(() => findAllArbitrage(games), [games]);
+  // Filter arbs by state availability (both books must be available)
+  const filterArbsByState = (opps: ArbitrageOpportunity[]): ArbitrageOpportunity[] => {
+    if (!userState) return opps;
+    return opps.filter(opp =>
+      opp.legs.every(leg => isBookAvailable(userState, leg.book))
+    );
+  };
+
+  // Calculate all arbs (filtered by state)
+  const allArbs = useMemo(() => {
+    const arbs = findAllArbitrage(games);
+    return filterArbsByState(arbs);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [games, userState]);
 
   // Calculate arb count (for FloatingContextBar)
   const arbCount = useMemo(() => {

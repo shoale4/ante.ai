@@ -7,8 +7,10 @@ import { FloatingContextBar } from "@/components/FloatingContextBar";
 import { WaitlistModal, useWaitlistModal } from "@/components/WaitlistModal";
 import { RedeemCodeModal, useRedeemModal } from "@/components/RedeemCodeModal";
 import { LaunchBanner } from "@/components/LaunchBanner";
-import { findAllArbitrage } from "@/lib/arbitrage";
+import { findAllArbitrage, ArbitrageOpportunity } from "@/lib/arbitrage";
 import { usePro } from "@/lib/pro-context";
+import { useUserState } from "@/components/StateSelector";
+import { isBookAvailable } from "@/lib/state-legality";
 
 interface Props {
   games: GameOdds[];
@@ -19,13 +21,24 @@ export function ArbitrageClient({ games }: Props) {
   const waitlistModal = useWaitlistModal();
   const redeemModal = useRedeemModal();
   const { isPro } = usePro();
+  const { userState } = useUserState();
 
-  // Calculate arb count
+  // Filter arbs by state availability (both books must be available)
+  const filterArbsByState = (opps: ArbitrageOpportunity[]): ArbitrageOpportunity[] => {
+    if (!userState) return opps;
+    return opps.filter(opp =>
+      opp.legs.every(leg => isBookAvailable(userState, leg.book))
+    );
+  };
+
+  // Calculate arb count (filtered by state)
   const arbCount = useMemo(() => {
     const allArbs = findAllArbitrage(games);
-    if (globalSport === "all") return allArbs.length;
-    return allArbs.filter((a) => a.sport === globalSport).length;
-  }, [games, globalSport]);
+    const filtered = filterArbsByState(allArbs);
+    if (globalSport === "all") return filtered.length;
+    return filtered.filter((a) => a.sport === globalSport).length;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [games, globalSport, userState]);
 
   // Calculate filtered game count
   const gameCount = useMemo(() => {

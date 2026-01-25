@@ -142,9 +142,6 @@ class OddsStorage:
             logger.info("No history data available for latest snapshot")
             return 0
 
-        # Use current time as the refresh timestamp
-        refresh_time = datetime.now(timezone.utc).isoformat()
-
         # Group by unique key: (book, sport, event_id, market_type, outcome)
         grouped: Dict[Tuple, List[dict]] = defaultdict(list)
         for record in history:
@@ -179,6 +176,10 @@ class OddsStorage:
             if opening_line is not None and current_line is not None:
                 line_movement = current_line - opening_line
 
+            # Use the actual timestamp from the last record for this book/market
+            # This enables proper per-book freshness gating in arb detection
+            last_updated = last.get("timestamp_utc", "")
+
             latest_row = LatestOddsRow(
                 book=last["book"],
                 sport=last["sport"],
@@ -194,7 +195,7 @@ class OddsStorage:
                 opening_line=opening_line,
                 current_line=current_line,
                 line_movement=line_movement,
-                last_updated=refresh_time,
+                last_updated=last_updated,
             )
             latest_rows.append(latest_row)
 
