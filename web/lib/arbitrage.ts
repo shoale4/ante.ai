@@ -753,24 +753,54 @@ export function findArbitrageOpportunities(
   }
 
   // === TOTAL MARKET ===
-  const bestOver = findBestOdds(game.markets.total, "over");
-  const bestUnder = findBestOdds(game.markets.total, "under");
+  // Group by line value - over/under must be on the SAME line to be a valid arb!
+  const overByLine = new Map<number, BookOdds[]>();
+  const underByLine = new Map<number, BookOdds[]>();
 
-  if (bestOver && bestUnder) {
-    const overOdds = game.markets.total.find(o => o.book === bestOver.book && o.outcome === "over");
-    const underOdds = game.markets.total.find(o => o.book === bestUnder.book && o.outcome === "under");
-    const line = overOdds?.currentLine ?? underOdds?.currentLine;
-
-    const legs = checkTwoWayArbitrage(
-      { ...bestOver, side: `Over ${line}` },
-      { ...bestUnder, side: `Under ${line}` },
-      totalStake
-    );
-
-    if (legs) {
-      opportunities.push(buildArbitrageOpportunity(game, "two-way", "total", legs, totalStake));
+  filterAllowedBooks(game.markets.total).forEach((odds) => {
+    const line = odds.currentLine ?? 0;
+    if (odds.outcome === "over") {
+      if (!overByLine.has(line)) overByLine.set(line, []);
+      overByLine.get(line)!.push(odds);
+    } else if (odds.outcome === "under") {
+      if (!underByLine.has(line)) underByLine.set(line, []);
+      underByLine.get(line)!.push(odds);
     }
-  }
+  });
+
+  // Check for arbs within each line
+  overByLine.forEach((overOdds, line) => {
+    const underOdds = underByLine.get(line);
+
+    if (underOdds && underOdds.length > 0) {
+      const bestOver = overOdds.reduce((best, curr) =>
+        curr.currentPrice > best.currentPrice ? curr : best
+      );
+      const bestUnder = underOdds.reduce((best, curr) =>
+        curr.currentPrice > best.currentPrice ? curr : best
+      );
+
+      const legs = checkTwoWayArbitrage(
+        {
+          book: bestOver.book,
+          price: bestOver.currentPrice,
+          side: `Over ${line}`,
+          lastUpdated: bestOver.lastUpdated,
+        },
+        {
+          book: bestUnder.book,
+          price: bestUnder.currentPrice,
+          side: `Under ${line}`,
+          lastUpdated: bestUnder.lastUpdated,
+        },
+        totalStake
+      );
+
+      if (legs) {
+        opportunities.push(buildArbitrageOpportunity(game, "two-way", "total", legs, totalStake));
+      }
+    }
+  });
 
   // === SPREAD MARKET ===
   // Group by line values (complementary lines: home +X matches away -X)
