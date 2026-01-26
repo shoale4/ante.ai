@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { GameOdds, Sport } from "@/lib/types";
 import { ArbitrageFinderBySport } from "@/components/ArbitrageFinderBySport";
+import { ArbCalculator } from "@/components/ArbCalculator";
 import { FloatingContextBar } from "@/components/FloatingContextBar";
 import { WaitlistModal, useWaitlistModal } from "@/components/WaitlistModal";
 import { RedeemCodeModal, useRedeemModal } from "@/components/RedeemCodeModal";
@@ -60,6 +61,9 @@ export function ArbitrageClient({ games, lastUpdated }: Props) {
           isPro={isPro}
           lastUpdated={lastUpdated}
         />
+
+        {/* Manual Arb Calculator */}
+        <ArbCalculator />
       </div>
 
       {/* Floating Context Bar - Mobile Only */}
