@@ -9,8 +9,9 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Set
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -48,6 +49,45 @@ MIN_FUTURES_EDGE = 5.0
 
 # Discord webhook URL from environment
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
+
+# File to track already-alerted arbs (avoid spam)
+ALERTED_ARBS_FILE = Path(__file__).parent.parent / "data" / "alerted_arbs.json"
+
+
+def load_alerted_arbs() -> Dict[str, str]:
+    """Load the set of arb keys we've already alerted on."""
+    if not ALERTED_ARBS_FILE.exists():
+        return {}
+    try:
+        with open(ALERTED_ARBS_FILE, 'r') as f:
+            return json.load(f)
+    except:
+        return {}
+
+
+def save_alerted_arbs(alerted: Dict[str, str]) -> None:
+    """Save the set of alerted arb keys."""
+    ALERTED_ARBS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(ALERTED_ARBS_FILE, 'w') as f:
+        json.dump(alerted, f, indent=2)
+
+
+def cleanup_old_alerts(alerted: Dict[str, str]) -> Dict[str, str]:
+    """Remove alerts older than 24 hours."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    return {k: v for k, v in alerted.items() if v > cutoff}
+
+
+def get_arb_key(opp: Dict) -> str:
+    """Generate a unique key for an arb opportunity."""
+    # Key = event + market + both books (sorted for consistency)
+    books = sorted([opp['legs'][0]['book'], opp['legs'][1]['book']])
+    return f"{opp['event_id']}:{opp['market']}:{books[0]}:{books[1]}"
+
+
+def get_futures_key(opp: Dict) -> str:
+    """Generate a unique key for a futures value opportunity."""
+    return f"futures:{opp['sport']}:{opp['team']}:{opp['best_book']}:{opp['worst_book']}"
 
 
 def load_latest_odds(csv_path: str) -> List[Dict[str, Any]]:
@@ -518,18 +558,31 @@ def main():
     odds = load_latest_odds(csv_path)
     print(f"Loaded {len(odds)} odds records")
 
+    # Load already-alerted arbs and clean up old ones
+    alerted = load_alerted_arbs()
+    alerted = cleanup_old_alerts(alerted)
+    now = datetime.now(timezone.utc).isoformat()
+
     print(f"Checking for arbs in Illinois-legal books: {', '.join(sorted(ILLINOIS_BOOKS))}")
-    opportunities = find_arbitrage_opportunities(odds, ILLINOIS_BOOKS)
+    all_opportunities = find_arbitrage_opportunities(odds, ILLINOIS_BOOKS)
 
-    print(f"Found {len(opportunities)} arbitrage opportunities")
+    # Filter out already-alerted arbs
+    new_opportunities = []
+    for opp in all_opportunities:
+        key = get_arb_key(opp)
+        if key not in alerted:
+            new_opportunities.append(opp)
+            alerted[key] = now  # Mark as alerted
 
-    if opportunities:
-        for opp in opportunities:
-            print(f"  {opp['roi_percent']}% - {opp['away_team']} @ {opp['home_team']} ({opp['market']})")
+    print(f"Found {len(all_opportunities)} total arbs, {len(new_opportunities)} new")
+
+    if new_opportunities:
+        for opp in new_opportunities:
+            print(f"  NEW: {opp['roi_percent']}% - {opp['away_team']} @ {opp['home_team']} ({opp['market']})")
             for leg in opp['legs']:
                 print(f"    {leg['side']} @ {leg['book'].upper()}: {leg['odds']} (${leg['stake']})")
 
-        message = format_discord_message(opportunities)
+        message = format_discord_message(new_opportunities)
         if message and DISCORD_WEBHOOK_URL:
             print("Sending Discord alert...")
             if send_discord_alert(message):
@@ -537,26 +590,39 @@ def main():
             else:
                 print("Failed to send alert")
     else:
-        print("No arbitrage opportunities found")
+        print("No new arbitrage opportunities found")
 
     # Also check for futures value opportunities
     print("\nChecking for futures value opportunities...")
-    futures_opps = find_futures_value(odds, ILLINOIS_BOOKS)
-    print(f"Found {len(futures_opps)} futures value opportunities")
+    all_futures = find_futures_value(odds, ILLINOIS_BOOKS)
 
-    if futures_opps:
-        for opp in futures_opps[:10]:  # Show top 10
-            print(f"  {opp['edge_percent']}% edge - {opp['team']} ({opp['sport']})")
+    # Filter out already-alerted futures
+    new_futures = []
+    for opp in all_futures:
+        key = get_futures_key(opp)
+        if key not in alerted:
+            new_futures.append(opp)
+            alerted[key] = now
+
+    print(f"Found {len(all_futures)} total futures edges, {len(new_futures)} new")
+
+    if new_futures:
+        for opp in new_futures[:10]:
+            print(f"  NEW: {opp['edge_percent']}% edge - {opp['team']} ({opp['sport']})")
             print(f"    Best: {opp['best_book'].upper()} @ {opp['best_odds']}")
             print(f"    Worst: {opp['worst_book'].upper()} @ {opp['worst_odds']}")
 
-        message = format_futures_discord_message(futures_opps)
+        message = format_futures_discord_message(new_futures)
         if message and DISCORD_WEBHOOK_URL:
             print("Sending futures alert...")
             if send_discord_alert(message):
                 print("Futures alert sent successfully!")
             else:
                 print("Failed to send futures alert")
+
+    # Save updated alerted set
+    save_alerted_arbs(alerted)
+    print(f"\nTracking {len(alerted)} alerted opportunities (cleared after 24h)")
 
     return 0
 

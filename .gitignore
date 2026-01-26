@@ -40,3 +40,4 @@ data/raw/*
 !data/raw/.gitkeep
 .env.twitter
 .vercel
+data/alerted_arbs.json
