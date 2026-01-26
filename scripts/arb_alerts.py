@@ -43,6 +43,10 @@ MIN_ROI_PERCENT = 0.5
 # Maximum ROI (above this is likely bad data)
 MAX_ROI_PERCENT = 15.0
 
+# Maximum age of odds to consider (in hours)
+# Odds older than this are likely stale and have changed
+MAX_ODDS_AGE_HOURS = 2
+
 # Discord webhook URL from environment
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
@@ -112,6 +116,7 @@ def find_arbitrage_opportunities(odds: List[Dict[str, Any]], allowed_books: set)
     events: Dict[str, Dict[str, Dict[str, List[Dict]]]] = {}
 
     now = datetime.now(timezone.utc)
+    max_age = timedelta(hours=MAX_ODDS_AGE_HOURS)
 
     for row in odds:
         book = row['book'].lower()
@@ -129,6 +134,16 @@ def find_arbitrage_opportunities(odds: List[Dict[str, Any]], allowed_books: set)
                 continue
         except:
             continue
+
+        # Skip stale odds (older than MAX_ODDS_AGE_HOURS)
+        last_updated = row.get('last_updated', '')
+        if last_updated:
+            try:
+                update_time = datetime.fromisoformat(last_updated.replace('Z', '+00:00'))
+                if now - update_time > max_age:
+                    continue  # Skip stale odds
+            except:
+                pass  # If we can't parse, include it
 
         try:
             price = int(row['current_price'])

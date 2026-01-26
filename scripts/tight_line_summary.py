@@ -24,6 +24,9 @@ ILLINOIS_BOOKS = {
 # Tight line threshold (100% = true arb, 102% = close to arb)
 MAX_IMPLIED_PROB = 1.02  # 102%
 
+# Maximum age of odds to consider (in hours)
+MAX_ODDS_AGE_HOURS = 2
+
 # Discord webhook URL from environment
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
@@ -71,6 +74,7 @@ def find_tight_lines(odds: List[Dict[str, Any]], allowed_books: set) -> List[Dic
 
     now = datetime.now(timezone.utc)
     tomorrow = now + timedelta(days=1)
+    max_age = timedelta(hours=MAX_ODDS_AGE_HOURS)
 
     for row in odds:
         book = row['book'].lower()
@@ -88,6 +92,16 @@ def find_tight_lines(odds: List[Dict[str, Any]], allowed_books: set) -> List[Dic
                 continue
         except:
             continue
+
+        # Skip stale odds
+        last_updated = row.get('last_updated', '')
+        if last_updated:
+            try:
+                update_time = datetime.fromisoformat(last_updated.replace('Z', '+00:00'))
+                if now - update_time > max_age:
+                    continue
+            except:
+                pass
 
         try:
             price = int(row['current_price'])
