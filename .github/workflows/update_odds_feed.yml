@@ -41,6 +41,11 @@ jobs:
       - name: Run odds feed update
         run: python -m hedj.cli --config config.json
 
+      - name: Check for arbitrage opportunities
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python scripts/arb_alerts.py
+
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
