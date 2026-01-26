@@ -15,6 +15,7 @@ const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
   NBA: "🏀",
   NCAAB: "🏀",
+  WNBA: "🏀",
   MLB: "⚾",
   NHL: "🏒",
   MMA: "🥊",

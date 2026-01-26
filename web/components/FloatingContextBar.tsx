@@ -10,13 +10,14 @@ const SPORT_EMOJI: Record<Sport | "all", string> = {
   NFL: "🏈",
   NBA: "🏀",
   NCAAB: "🏀",
+  WNBA: "🏀",
   MLB: "⚾",
   NHL: "🏒",
   MMA: "🥊",
   Soccer: "⚽",
 };
 
-const SPORTS: (Sport | "all")[] = ["all", "NFL", "NBA", "NCAAB", "MLB", "NHL", "MMA", "Soccer"];
+const SPORTS: (Sport | "all")[] = ["all", "NFL", "NBA", "NCAAB", "WNBA", "MLB", "NHL", "MMA", "Soccer"];
 
 interface Props {
   arbCount: number;

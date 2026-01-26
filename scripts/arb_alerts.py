@@ -43,10 +43,6 @@ MIN_ROI_PERCENT = 0.5
 # Maximum ROI (above this is likely bad data)
 MAX_ROI_PERCENT = 15.0
 
-# Minimum edge for futures value alerts (percentage points of implied prob)
-# If best odds are 5%+ better implied prob than worst, alert
-MIN_FUTURES_EDGE = 5.0
-
 # Discord webhook URL from environment
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
@@ -83,11 +79,6 @@ def get_arb_key(opp: Dict) -> str:
     # Key = event + market + both books (sorted for consistency)
     books = sorted([opp['legs'][0]['book'], opp['legs'][1]['book']])
     return f"{opp['event_id']}:{opp['market']}:{books[0]}:{books[1]}"
-
-
-def get_futures_key(opp: Dict) -> str:
-    """Generate a unique key for a futures value opportunity."""
-    return f"futures:{opp['sport']}:{opp['team']}:{opp['best_book']}:{opp['worst_book']}"
 
 
 def load_latest_odds(csv_path: str) -> List[Dict[str, Any]]:
@@ -295,133 +286,6 @@ def check_two_way_arb(
     }
 
 
-def find_futures_value(odds: List[Dict[str, Any]], allowed_books: set) -> List[Dict[str, Any]]:
-    """Find futures with significant price discrepancies between books."""
-    # Group futures odds by sport and outcome (team name)
-    futures: Dict[str, Dict[str, List[Dict]]] = {}
-
-    for row in odds:
-        if row['market_type'] != 'futures':
-            continue
-
-        book = row['book'].lower()
-        if book not in allowed_books:
-            continue
-
-        sport = row['sport']
-        team = row['outcome']  # For futures, outcome is the team name
-
-        try:
-            price = int(row['current_price'])
-            if not is_valid_american_odds(price):
-                continue
-        except:
-            continue
-
-        key = f"{sport}:{team}"
-        if key not in futures:
-            futures[key] = {
-                'sport': sport,
-                'team': team,
-                'home_team': row.get('home_team', ''),  # This is the futures title
-                'odds': []
-            }
-
-        futures[key]['odds'].append({
-            'book': book,
-            'price': price,
-            'last_updated': row.get('last_updated', '')
-        })
-
-    # Find significant discrepancies
-    value_opportunities = []
-
-    for key, data in futures.items():
-        if len(data['odds']) < 2:
-            continue
-
-        # Find best and worst odds
-        best = max(data['odds'], key=lambda x: x['price'])
-        worst = min(data['odds'], key=lambda x: x['price'])
-
-        try:
-            best_decimal = american_to_decimal(best['price'])
-            worst_decimal = american_to_decimal(worst['price'])
-        except:
-            continue
-
-        # Calculate edge (difference in implied probability)
-        best_implied = 1 / best_decimal
-        worst_implied = 1 / worst_decimal
-        edge = (worst_implied - best_implied) * 100  # As percentage points
-
-        if edge >= MIN_FUTURES_EDGE:
-            value_opportunities.append({
-                'sport': data['sport'],
-                'futures_title': data['home_team'],
-                'team': data['team'],
-                'edge_percent': round(edge, 1),
-                'best_book': best['book'],
-                'best_odds': best['price'],
-                'worst_book': worst['book'],
-                'worst_odds': worst['price'],
-                'last_updated': best.get('last_updated'),
-            })
-
-    return sorted(value_opportunities, key=lambda x: x['edge_percent'], reverse=True)
-
-
-def format_futures_discord_message(opportunities: List[Dict]) -> Dict:
-    """Format futures value opportunities as a Discord webhook message."""
-    if not opportunities:
-        return None
-
-    embeds = []
-
-    for opp in opportunities[:5]:
-        def fmt_odds(odds):
-            return f"+{odds}" if odds > 0 else str(odds)
-
-        best_link = get_book_link(opp['best_book'])
-        worst_link = get_book_link(opp['worst_book'])
-
-        best_display = f"[{opp['best_book'].upper()}]({best_link})" if best_link else opp['best_book'].upper()
-        worst_display = f"[{opp['worst_book'].upper()}]({worst_link})" if worst_link else opp['worst_book'].upper()
-
-        embed = {
-            "title": f"📈 {opp['edge_percent']}% Edge: {opp['team']}",
-            "description": f"**{opp['futures_title']}** - Significant price difference found!",
-            "color": 0x3498DB,  # Blue
-            "fields": [
-                {
-                    "name": "🔥 Best Odds",
-                    "value": f"**{best_display}** @ {fmt_odds(opp['best_odds'])}",
-                    "inline": True
-                },
-                {
-                    "name": "📉 Worst Odds",
-                    "value": f"**{worst_display}** @ {fmt_odds(opp['worst_odds'])}",
-                    "inline": True
-                },
-                {
-                    "name": "💡 Value Edge",
-                    "value": f"{opp['edge_percent']}% implied prob difference",
-                    "inline": False
-                }
-            ],
-            "footer": {
-                "text": f"{opp['sport']} • Futures move slow - good for manual betting"
-            },
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        embeds.append(embed)
-
-    return {
-        "content": f"**📊 {len(opportunities)} Futures Value Opportunity{'s' if len(opportunities) != 1 else ''} Found!**\n*These aren't arbs but show which book has best value.*",
-        "embeds": embeds
-    }
-
-
 def format_freshness(found_at: Optional[str]) -> str:
     """Format how long ago the arb was found."""
     if not found_at:
@@ -591,34 +455,6 @@ def main():
                 print("Failed to send alert")
     else:
         print("No new arbitrage opportunities found")
-
-    # Also check for futures value opportunities
-    print("\nChecking for futures value opportunities...")
-    all_futures = find_futures_value(odds, ILLINOIS_BOOKS)
-
-    # Filter out already-alerted futures
-    new_futures = []
-    for opp in all_futures:
-        key = get_futures_key(opp)
-        if key not in alerted:
-            new_futures.append(opp)
-            alerted[key] = now
-
-    print(f"Found {len(all_futures)} total futures edges, {len(new_futures)} new")
-
-    if new_futures:
-        for opp in new_futures[:10]:
-            print(f"  NEW: {opp['edge_percent']}% edge - {opp['team']} ({opp['sport']})")
-            print(f"    Best: {opp['best_book'].upper()} @ {opp['best_odds']}")
-            print(f"    Worst: {opp['worst_book'].upper()} @ {opp['worst_odds']}")
-
-        message = format_futures_discord_message(new_futures)
-        if message and DISCORD_WEBHOOK_URL:
-            print("Sending futures alert...")
-            if send_discord_alert(message):
-                print("Futures alert sent successfully!")
-            else:
-                print("Failed to send futures alert")
 
     # Save updated alerted set
     save_alerted_arbs(alerted)

@@ -25,12 +25,13 @@ interface ESPNNewsResponse {
   articles: ESPNNewsArticle[];
 }
 
-type SportType = "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer";
+type SportType = "NFL" | "NBA" | "NCAAB" | "WNBA" | "MLB" | "NHL" | "MMA" | "Soccer";
 
 const SPORT_ENDPOINTS: Record<SportType, string> = {
   NFL: `${ESPN_API_BASE}/football/nfl/news`,
   NBA: `${ESPN_API_BASE}/basketball/nba/news`,
   NCAAB: `${ESPN_API_BASE}/basketball/mens-college-basketball/news`,
+  WNBA: `${ESPN_API_BASE}/basketball/wnba/news`,
   MLB: `${ESPN_API_BASE}/baseball/mlb/news`,
   NHL: `${ESPN_API_BASE}/hockey/nhl/news`,
   MMA: `${ESPN_API_BASE}/mma/ufc/news`,
@@ -264,10 +265,17 @@ function extractTeams(text: string, sport: SportType): string[] {
     "Bayern Munich", "Dortmund", "PSG", "Juventus", "Inter Milan", "AC Milan"
   ];
 
+  const wnbaTeams = [
+    "Atlanta Dream", "Chicago Sky", "Connecticut Sun", "Dallas Wings",
+    "Indiana Fever", "Las Vegas Aces", "Los Angeles Sparks", "Minnesota Lynx",
+    "New York Liberty", "Phoenix Mercury", "Seattle Storm", "Washington Mystics"
+  ];
+
   const teamLists: Record<SportType, string[]> = {
     NFL: nflTeams,
     NBA: nbaTeams,
     NCAAB: ncaabTeams,
+    WNBA: wnbaTeams,
     MLB: mlbTeams,
     NHL: nhlTeams,
     MMA: mmaFighters,

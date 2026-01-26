@@ -382,6 +382,7 @@ class ExampleProvider(OddsProvider):
         mapping = {
             "americanfootball_nfl": "NFL",
             "basketball_nba": "NBA",
+            "basketball_wnba": "WNBA",
             "baseball_mlb": "MLB",
             "icehockey_nhl": "NHL",
             "americanfootball_ncaaf": "NCAAF",

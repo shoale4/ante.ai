@@ -6,7 +6,7 @@ export interface NewsItem {
   source: string;
   sourceIcon: string;
   publishedAt: string;
-  sport: "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
+  sport: "NFL" | "NBA" | "NCAAB" | "WNBA" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
   teams: string[]; // Affected teams
   sentiment: "positive" | "negative" | "neutral";
   isBreaking: boolean;

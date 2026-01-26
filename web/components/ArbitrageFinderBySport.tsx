@@ -8,12 +8,13 @@ import { useUserState } from "./StateSelector";
 import { isBookAvailable } from "@/lib/state-legality";
 import { refreshArbitrageData } from "@/app/actions";
 
-const SPORTS: Sport[] = ["NFL", "NBA", "NCAAB", "NHL", "MLB", "MMA", "Soccer"];
+const SPORTS: Sport[] = ["NFL", "NBA", "NCAAB", "WNBA", "NHL", "MLB", "MMA", "Soccer"];
 
 const SPORT_EMOJI: Record<Sport, string> = {
   NFL: "🏈",
   NBA: "🏀",
   NCAAB: "🏀",
+  WNBA: "🏀",
   MLB: "⚾",
   NHL: "🏒",
   MMA: "🥊",

@@ -1,7 +1,7 @@
 import { NewsItem } from "./news";
 import { fetchAllESPNNews } from "./espn-news";
 
-type SportType = "NFL" | "NBA" | "NCAAB" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
+type SportType = "NFL" | "NBA" | "NCAAB" | "WNBA" | "MLB" | "NHL" | "MMA" | "Soccer" | "General";
 
 // CBS Sports RSS endpoints
 const CBS_RSS_FEEDS: Record<string, string> = {
@@ -197,6 +197,7 @@ function extractTeams(text: string, sport: SportType): string[] {
     NFL: ["Cardinals", "Falcons", "Ravens", "Bills", "Panthers", "Bears", "Bengals", "Browns", "Cowboys", "Broncos", "Lions", "Packers", "Texans", "Colts", "Jaguars", "Chiefs", "Raiders", "Chargers", "Rams", "Dolphins", "Vikings", "Patriots", "Saints", "Giants", "Jets", "Eagles", "Steelers", "49ers", "Seahawks", "Buccaneers", "Titans", "Commanders"],
     NBA: ["Hawks", "Celtics", "Nets", "Hornets", "Bulls", "Cavaliers", "Mavericks", "Nuggets", "Pistons", "Warriors", "Rockets", "Pacers", "Clippers", "Lakers", "Grizzlies", "Heat", "Bucks", "Timberwolves", "Pelicans", "Knicks", "Thunder", "Magic", "76ers", "Suns", "Trail Blazers", "Kings", "Spurs", "Raptors", "Jazz", "Wizards"],
     NCAAB: ["Duke", "North Carolina", "Kentucky", "Kansas", "UCLA", "Gonzaga", "UConn", "Houston", "Purdue", "Tennessee", "Arizona", "Alabama", "Auburn", "Baylor", "Texas", "Michigan", "Michigan State", "Indiana", "Illinois", "Iowa State", "Iowa", "Wisconsin", "Ohio State", "Villanova", "Creighton", "Marquette"],
+    WNBA: ["Dream", "Sky", "Sun", "Wings", "Fever", "Aces", "Sparks", "Lynx", "Liberty", "Mercury", "Storm", "Mystics"],
     MLB: ["Diamondbacks", "Braves", "Orioles", "Red Sox", "Cubs", "White Sox", "Reds", "Guardians", "Rockies", "Tigers", "Astros", "Royals", "Angels", "Dodgers", "Marlins", "Brewers", "Twins", "Mets", "Yankees", "Athletics", "Phillies", "Pirates", "Padres", "Giants", "Mariners", "Cardinals", "Rays", "Rangers", "Blue Jays", "Nationals"],
     NHL: ["Ducks", "Coyotes", "Bruins", "Sabres", "Flames", "Hurricanes", "Blackhawks", "Avalanche", "Blue Jackets", "Stars", "Red Wings", "Oilers", "Panthers", "Kings", "Wild", "Canadiens", "Predators", "Devils", "Islanders", "Rangers", "Senators", "Flyers", "Penguins", "Sharks", "Kraken", "Blues", "Lightning", "Maple Leafs", "Canucks", "Golden Knights", "Capitals", "Jets"],
     MMA: ["UFC", "Jones", "Makhachev", "Adesanya", "Volkanovski", "Edwards", "Strickland"],
