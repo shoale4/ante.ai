@@ -56,7 +56,9 @@ Core arbitrage detection algorithm. Key functions:
 - `checkTwoWayArbitrage()` - Compares two odds for arb (moneyline, spread, total)
 - `checkThreeWayArbitrage()` - Three-way markets (soccer with draw)
 
-**IMPORTANT BUG FIX (Jan 2026):** The spread arbitrage matching was fixed to correctly match complementary lines. Home spread at line X must match with away spread at line -X (e.g., home -3.5 matches away +3.5). Previously it was incorrectly matching same-line odds from different books.
+**IMPORTANT BUG FIXES (Jan 2026):**
+1. **Spread matching:** Home spread at line X must match with away spread at line -X (e.g., home -3.5 matches away +3.5)
+2. **Total matching:** Over/under must be on the SAME line. Was incorrectly pairing Over 6.5 from FanDuel with Under 5.5 from DraftKings as an "arb" - this is invalid because if the total lands at 6, you lose both bets!
 
 ### `web/lib/data.ts`
 Data fetching and parsing:
@@ -68,15 +70,16 @@ Data fetching and parsing:
 
 **The Odds API pricing:** Credits based on regions × markets
 - Current config: 1 region (us) × 3 markets (h2h, spreads, totals) = 3 credits per sport
-- 8 sports × 3 credits = 24 credits per API run
-- Hourly updates = 576 credits/day
+- 5 sports × 3 credits = 15 credits per API run
+- Every 40 min = 36 runs/day = 540 credits/day = **16,200/month**
 - $25/mo plan = 20,000 credits
 
 **Cost optimizations implemented:**
-1. Changed from 30-min to hourly updates
-2. Added configurable markets in `config.json`
-3. Added API quota tracking (logs remaining credits)
-4. Added `--cleanup` flag to remove old history data
+1. Every 40 minutes (was hourly, then 30-min)
+2. Removed soccer leagues to allow faster fetches
+3. Added configurable markets in `config.json`
+4. Added API quota tracking (logs remaining credits)
+5. Added `--cleanup` flag to remove old history data
 
 ## Config File (`config.json`)
 
@@ -100,8 +103,18 @@ Data fetching and parsing:
 
 ## GitHub Actions Workflows
 
-- `.github/workflows/update_odds_feed.yml` - Hourly odds fetch
+- `.github/workflows/update_odds_feed.yml` - Odds fetch every 40 minutes
+- `.github/workflows/arb-alerts.yml` - Discord alerts every 15 min for Illinois arbs
 - `.github/workflows/cleanup_history.yml` - Weekly data cleanup (keeps 7 days)
+
+## Discord Arb Alerts
+
+**Script:** `scripts/arb_alerts.py`
+**Webhook:** Stored in GitHub Secrets as `DISCORD_WEBHOOK_URL`
+**Frequency:** Every 15 minutes during peak hours (10am-11pm ET)
+**Filter:** Illinois-legal books only (FanDuel, DraftKings, BetMGM, Caesars, PointsBet, BetRivers, ESPN BET)
+
+The alert script reads the already-fetched CSV data (no API calls) and posts formatted embeds to Discord when arbs are found.
 
 ## Monetization
 
@@ -174,14 +187,34 @@ Required for production:
 
 ## Recent Changes (Jan 2026)
 
+### Session Jan 24-25, 2026
+1. **Fixed critical total line bug** - Was matching Over 6.5 vs Under 5.5 as valid arbs (INVALID!). Now groups totals by line value and only matches over/under on same line.
+2. **Added timestamp display** - Shows "X min ago" data freshness in arbitrage scanner header
+3. **Added Pro-only refresh button** - Manual cache invalidation via `revalidatePath()` server action, with visual "Refreshed!" feedback
+4. **Added "Track Bets" button** - One-click saves all arb legs to localStorage bet tracker (Pro-only)
+5. **Made /my-tracker Pro-only** - Shows fake 404 page for non-Pro users
+6. **Arb count updates with state filter** - Both ArbitrageClient and DashboardClient now filter by state
+7. **Discord arb alerts** - Posts to Discord when Illinois arbs found (every 15 min)
+8. **Increased fetch frequency** - Every 40 minutes (was hourly)
+9. **Removed soccer leagues** - EPL, La Liga, UCL removed to stay under API budget with faster fetches
+
+### Earlier Jan 2026
 1. **Fixed spread arbitrage bug** - Was comparing wrong lines
 2. **Added 15% profit cap** - Filters data errors
-3. **Hourly updates** - Was every 30 min
-4. **API quota logging** - Tracks remaining credits
-5. **Weekly cleanup** - Prevents CSV bloat
+3. **API quota logging** - Tracks remaining credits
+4. **Weekly cleanup** - Prevents CSV bloat
 
 ## Sports Covered
 
-NFL, NBA, NCAAB, NHL, MMA, Soccer (EPL, La Liga, UCL)
+NFL, NBA, NCAAB, NHL, MMA
 
-MLB disabled (offseason) - re-enable in late March.
+**Removed:** Soccer (EPL, La Liga, UCL) - removed to allow faster 40-min fetch frequency
+**Disabled:** MLB (offseason) - re-enable in late March
+
+## Pro Features
+
+Features gated behind `usePro()` hook (checks localStorage for promo code):
+- Full arbitrage list (free users see bottom 2 per sport)
+- "Track Bets" button on arb cards
+- Manual refresh button
+- /my-tracker bet tracking page (shows 404 for non-Pro)
