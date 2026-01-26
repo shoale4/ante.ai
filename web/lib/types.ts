@@ -5,8 +5,8 @@ export interface OddsSnapshot {
   eventStartTime: string;
   homeTeam: string;
   awayTeam: string;
-  marketType: "moneyline" | "spread" | "total";
-  outcome: "home" | "away" | "draw" | "over" | "under";
+  marketType: "moneyline" | "spread" | "total" | "futures";
+  outcome: string; // home/away/draw/over/under for games, team name for futures
   openingPrice: number;
   currentPrice: number;
   priceMovement: number;

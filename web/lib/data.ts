@@ -19,8 +19,8 @@ interface HistoricalOdds {
   eventStartTime: string;
   homeTeam: string;
   awayTeam: string;
-  marketType: "moneyline" | "spread" | "total";
-  outcome: "home" | "away" | "draw" | "over" | "under";
+  marketType: "moneyline" | "spread" | "total" | "futures";
+  outcome: string;
   price: number;
   line: number | null;
 }
@@ -61,8 +61,8 @@ export async function getLatestOdds(): Promise<OddsSnapshot[]> {
         eventStartTime: values[3],
         homeTeam: values[4],
         awayTeam: values[5],
-        marketType: values[6] as "moneyline" | "spread" | "total",
-        outcome: values[7] as "home" | "away" | "draw" | "over" | "under",
+        marketType: values[6] as "moneyline" | "spread" | "total" | "futures",
+        outcome: values[7] as string,
         openingPrice: parseInt(values[8]) || 0,
         currentPrice: parseInt(values[9]) || 0,
         priceMovement: parseInt(values[10]) || 0,
@@ -134,6 +134,9 @@ export async function getGameOdds(): Promise<GameOdds[]> {
   const gamesMap = new Map<string, GameOdds>();
 
   for (const snapshot of odds) {
+    // Skip futures - they have different structure (no home/away teams)
+    if (snapshot.marketType === "futures") continue;
+
     if (!gamesMap.has(snapshot.eventId)) {
       gamesMap.set(snapshot.eventId, {
         eventId: snapshot.eventId,
@@ -162,7 +165,10 @@ export async function getGameOdds(): Promise<GameOdds[]> {
       lastUpdated: snapshot.lastUpdated,
     };
 
-    game.markets[snapshot.marketType].push(bookOdds);
+    // Only push to known market types
+    if (snapshot.marketType in game.markets) {
+      game.markets[snapshot.marketType].push(bookOdds);
+    }
   }
 
   // Filter to only upcoming games (exclude games that have already started and stub data)
@@ -220,8 +226,8 @@ async function getHistoricalOdds(): Promise<HistoricalOdds[]> {
         eventStartTime: values[4],
         homeTeam: values[5],
         awayTeam: values[6],
-        marketType: values[7] as "moneyline" | "spread" | "total",
-        outcome: values[8] as "home" | "away" | "draw" | "over" | "under",
+        marketType: values[7] as "moneyline" | "spread" | "total" | "futures",
+        outcome: values[8] as string,
         price: parseInt(values[9]) || 0,
         line: values[10] ? parseFloat(values[10]) : null,
       };
