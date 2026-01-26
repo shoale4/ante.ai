@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
 """
-Arbitrage Alert System
+Tight Line Summary - Morning Alert for Pre-Arb Candidates
 
-Checks for arbitrage opportunities in a specific state and sends Discord alerts.
+Identifies games with tight lines (close to arbitrage) that are worth monitoring.
+These are games where the implied probability sum is between 100% and 102%.
 """
 
 import csv
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-# Illinois-legal books (update as needed)
+# Illinois-legal books
 ILLINOIS_BOOKS = {
     "fanduel", "draftkings", "betmgm", "caesars",
     "pointsbetus", "betrivers", "espnbet"
 }
 
-# Sportsbook deep links (web URLs that open apps on mobile)
+# Tight line threshold (100% = true arb, 102% = close to arb)
+MAX_IMPLIED_PROB = 1.02  # 102%
+
+# Discord webhook URL from environment
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
+
+# Sportsbook links
 SPORTSBOOK_LINKS = {
     "fanduel": "https://sportsbook.fanduel.com",
     "draftkings": "https://sportsbook.draftkings.com",
@@ -29,21 +36,7 @@ SPORTSBOOK_LINKS = {
     "pointsbetus": "https://pointsbet.com",
     "betrivers": "https://il.betrivers.com",
     "espnbet": "https://espnbet.com",
-    "bet365": "https://bet365.com",
-    "betonlineag": "https://betonline.ag",
-    "unibet": "https://unibet.com",
-    "wynnbet": "https://wynnbet.com",
-    "superbook": "https://superbook.com"
 }
-
-# Minimum ROI to alert on (percentage)
-MIN_ROI_PERCENT = 0.5
-
-# Maximum ROI (above this is likely bad data)
-MAX_ROI_PERCENT = 15.0
-
-# Discord webhook URL from environment
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
 
 def load_latest_odds(csv_path: str) -> List[Dict[str, Any]]:
@@ -71,12 +64,13 @@ def is_valid_american_odds(odds: int) -> bool:
     return odds >= 100 or odds <= -100
 
 
-def find_arbitrage_opportunities(odds: List[Dict[str, Any]], allowed_books: set) -> List[Dict[str, Any]]:
-    """Find arbitrage opportunities filtered by allowed books."""
+def find_tight_lines(odds: List[Dict[str, Any]], allowed_books: set) -> List[Dict[str, Any]]:
+    """Find games with tight lines (close to arbitrage)."""
     # Group odds by event and market
-    events: Dict[str, Dict[str, Dict[str, List[Dict]]]] = {}
+    events: Dict[str, Dict[str, Any]] = {}
 
     now = datetime.now(timezone.utc)
+    tomorrow = now + timedelta(days=1)
 
     for row in odds:
         book = row['book'].lower()
@@ -87,10 +81,10 @@ def find_arbitrage_opportunities(odds: List[Dict[str, Any]], allowed_books: set)
         market = row['market_type']
         outcome = row['outcome']
 
-        # Skip past events
+        # Only look at games in the next 24 hours
         try:
             event_time = datetime.fromisoformat(row['event_start_time'].replace('+00:00', '+00:00'))
-            if event_time < now:
+            if event_time < now or event_time > tomorrow:
                 continue
         except:
             continue
@@ -121,25 +115,24 @@ def find_arbitrage_opportunities(odds: List[Dict[str, Any]], allowed_books: set)
             'book': book,
             'price': price,
             'line': row.get('current_line'),
-            'last_updated': row.get('last_updated', '')
         })
 
-    # Find arbs
-    opportunities = []
+    # Find tight lines
+    tight_lines = []
 
     for event_id, event in events.items():
         for market, outcomes in event['markets'].items():
-            # Two-way markets (moneyline home/away, totals over/under)
+            # Two-way markets
             if market == 'moneyline':
-                arb = check_two_way_arb(
+                result = check_tight_line(
                     outcomes.get('home', []),
                     outcomes.get('away', []),
                     event,
                     market,
                     event_id
                 )
-                if arb:
-                    opportunities.append(arb)
+                if result:
+                    tight_lines.append(result)
 
             elif market == 'total':
                 # Group by line value
@@ -162,17 +155,17 @@ def find_arbitrage_opportunities(odds: List[Dict[str, Any]], allowed_books: set)
                 for line, overs in over_by_line.items():
                     unders = under_by_line.get(line, [])
                     if unders:
-                        arb = check_two_way_arb(
+                        result = check_tight_line(
                             overs, unders, event, market, event_id,
                             side1_label=f"Over {line}", side2_label=f"Under {line}"
                         )
-                        if arb:
-                            opportunities.append(arb)
+                        if result:
+                            tight_lines.append(result)
 
-    return sorted(opportunities, key=lambda x: x['roi_percent'], reverse=True)
+    return sorted(tight_lines, key=lambda x: x['implied_prob_sum'])
 
 
-def check_two_way_arb(
+def check_tight_line(
     side1_odds: List[Dict],
     side2_odds: List[Dict],
     event: Dict,
@@ -181,7 +174,7 @@ def check_two_way_arb(
     side1_label: Optional[str] = None,
     side2_label: Optional[str] = None
 ) -> Optional[Dict]:
-    """Check for two-way arbitrage opportunity."""
+    """Check if a market has tight lines (close to arb)."""
     if not side1_odds or not side2_odds:
         return None
 
@@ -197,30 +190,12 @@ def check_two_way_arb(
 
     implied_sum = (1/dec1) + (1/dec2)
 
-    if implied_sum >= 1:
-        return None  # No arb
-
-    roi_percent = ((1 / implied_sum) - 1) * 100
-
-    if roi_percent < MIN_ROI_PERCENT or roi_percent > MAX_ROI_PERCENT:
+    # Already an arb or too far from arb
+    if implied_sum < 1.0 or implied_sum > MAX_IMPLIED_PROB:
         return None
 
-    # Calculate stakes for $100 total
-    total_stake = 100
-    stake1 = ((1/dec1) / implied_sum) * total_stake
-    stake2 = ((1/dec2) / implied_sum) * total_stake
-    profit = (stake1 * dec1) - total_stake
-
-    # Calculate freshness (oldest leg determines arb freshness)
-    oldest_update = None
-    for leg_data in [best1, best2]:
-        if leg_data.get('last_updated'):
-            try:
-                leg_time = datetime.fromisoformat(leg_data['last_updated'].replace('Z', '+00:00'))
-                if oldest_update is None or leg_time < oldest_update:
-                    oldest_update = leg_time
-            except:
-                pass
+    # Calculate how close to arb (1.0 = true arb)
+    gap_to_arb = (implied_sum - 1.0) * 100  # Percentage points away
 
     return {
         'event_id': event_id,
@@ -229,127 +204,97 @@ def check_two_way_arb(
         'away_team': event['away_team'],
         'event_start_time': event['event_start_time'],
         'market': market,
-        'roi_percent': round(roi_percent, 2),
-        'profit': round(profit, 2),
-        'found_at': oldest_update.isoformat() if oldest_update else None,
+        'implied_prob_sum': round(implied_sum, 4),
+        'gap_to_arb': round(gap_to_arb, 2),
         'legs': [
             {
                 'side': side1_label or event['home_team'],
                 'book': best1['book'],
                 'odds': best1['price'],
-                'stake': round(stake1, 2),
-                'last_updated': best1.get('last_updated')
             },
             {
                 'side': side2_label or event['away_team'],
                 'book': best2['book'],
                 'odds': best2['price'],
-                'stake': round(stake2, 2),
-                'last_updated': best2.get('last_updated')
             }
         ]
     }
 
 
-def format_freshness(found_at: Optional[str]) -> str:
-    """Format how long ago the arb was found."""
-    if not found_at:
-        return "Unknown"
-
-    try:
-        found_time = datetime.fromisoformat(found_at.replace('Z', '+00:00'))
-        now = datetime.now(timezone.utc)
-        delta = now - found_time
-
-        minutes = int(delta.total_seconds() / 60)
-        if minutes < 1:
-            return "Just now"
-        elif minutes < 60:
-            return f"{minutes}m ago"
-        elif minutes < 1440:
-            hours = minutes // 60
-            return f"{hours}h ago"
-        else:
-            days = minutes // 1440
-            return f"{days}d ago"
-    except:
-        return "Unknown"
-
-
-def get_book_link(book: str) -> str:
-    """Get the sportsbook link for a book."""
-    return SPORTSBOOK_LINKS.get(book.lower(), "")
-
-
-def format_discord_message(opportunities: List[Dict]) -> Dict:
-    """Format opportunities as a Discord webhook message."""
-    if not opportunities:
+def format_discord_message(tight_lines: List[Dict]) -> Dict:
+    """Format tight lines as a Discord webhook message."""
+    if not tight_lines:
         return None
 
+    # Group by sport
+    by_sport: Dict[str, List[Dict]] = {}
+    for tl in tight_lines:
+        sport = tl['sport']
+        if sport not in by_sport:
+            by_sport[sport] = []
+        by_sport[sport].append(tl)
+
     embeds = []
+    total_count = len(tight_lines)
 
-    for opp in opportunities[:5]:  # Limit to 5 per message
-        # Format game time
-        try:
-            game_time = datetime.fromisoformat(opp['event_start_time'].replace('+00:00', '+00:00'))
-            time_str = game_time.strftime("%a %I:%M %p ET")
-        except:
-            time_str = "TBD"
+    for sport, games in by_sport.items():
+        # Format sport name
+        sport_display = {
+            'americanfootball_nfl': 'NFL',
+            'basketball_nba': 'NBA',
+            'basketball_ncaab': 'NCAAB',
+            'icehockey_nhl': 'NHL',
+            'mma_mixed_martial_arts': 'MMA',
+        }.get(sport, sport.upper())
 
-        # Format odds with + sign for positive
-        def fmt_odds(odds):
-            return f"+{odds}" if odds > 0 else str(odds)
+        fields = []
 
-        leg1 = opp['legs'][0]
-        leg2 = opp['legs'][1]
+        for game in games[:6]:  # Limit per sport
+            leg1 = game['legs'][0]
+            leg2 = game['legs'][1]
 
-        # Get sportsbook links
-        link1 = get_book_link(leg1['book'])
-        link2 = get_book_link(leg2['book'])
+            def fmt_odds(odds):
+                return f"+{odds}" if odds > 0 else str(odds)
 
-        # Format book names with links
-        book1_display = f"[{leg1['book'].upper()}]({link1})" if link1 else leg1['book'].upper()
-        book2_display = f"[{leg2['book'].upper()}]({link2})" if link2 else leg2['book'].upper()
+            # Get sportsbook links
+            link1 = SPORTSBOOK_LINKS.get(leg1['book'].lower(), "")
+            link2 = SPORTSBOOK_LINKS.get(leg2['book'].lower(), "")
 
-        # Freshness indicator
-        freshness = format_freshness(opp.get('found_at'))
-        freshness_emoji = "🟢" if "m ago" in freshness or freshness == "Just now" else "🟡" if "h ago" in freshness else "🔴"
+            book1 = f"[{leg1['book'].upper()}]({link1})" if link1 else leg1['book'].upper()
+            book2 = f"[{leg2['book'].upper()}]({link2})" if link2 else leg2['book'].upper()
+
+            # Format game time
+            try:
+                game_time = datetime.fromisoformat(game['event_start_time'].replace('+00:00', '+00:00'))
+                time_str = game_time.strftime("%I:%M %p")
+            except:
+                time_str = "TBD"
+
+            gap_emoji = "🔥" if game['gap_to_arb'] < 0.5 else "👀" if game['gap_to_arb'] < 1.0 else "📊"
+
+            fields.append({
+                "name": f"{gap_emoji} {game['away_team']} @ {game['home_team']} ({time_str})",
+                "value": (
+                    f"**{game['market'].title()}** • {game['gap_to_arb']:.1f}% from arb\n"
+                    f"{leg1['side']}: {book1} @ {fmt_odds(leg1['odds'])}\n"
+                    f"{leg2['side']}: {book2} @ {fmt_odds(leg2['odds'])}"
+                ),
+                "inline": False
+            })
 
         embed = {
-            "title": f"🚨 {opp['roi_percent']}% ARB: {opp['away_team']} @ {opp['home_team']}",
-            "color": 0x00FF00,  # Green
-            "fields": [
-                {
-                    "name": f"📍 {leg1['side']}",
-                    "value": f"**{book1_display}** @ {fmt_odds(leg1['odds'])}\nStake: ${leg1['stake']:.2f}",
-                    "inline": True
-                },
-                {
-                    "name": f"📍 {leg2['side']}",
-                    "value": f"**{book2_display}** @ {fmt_odds(leg2['odds'])}\nStake: ${leg2['stake']:.2f}",
-                    "inline": True
-                },
-                {
-                    "name": "💰 Guaranteed Profit",
-                    "value": f"**${opp['profit']:.2f}** on $100",
-                    "inline": True
-                },
-                {
-                    "name": f"{freshness_emoji} Odds Age",
-                    "value": freshness,
-                    "inline": True
-                }
-            ],
-            "footer": {
-                "text": f"{opp['sport']} • {opp['market'].title()} • {time_str}"
-            },
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "title": f"🏀 {sport_display} - {len(games)} Tight Line{'s' if len(games) != 1 else ''}",
+            "color": 0xFFAA00,  # Orange
+            "fields": fields,
         }
         embeds.append(embed)
 
     return {
-        "content": f"**{len(opportunities)} Arbitrage Opportunity{'s' if len(opportunities) != 1 else ''} Found in Illinois!**",
-        "embeds": embeds
+        "content": (
+            f"**☀️ Morning Summary: {total_count} Tight Line{'s' if total_count != 1 else ''} Today**\n"
+            f"These games are close to arbitrage opportunities. Watch for line movement!"
+        ),
+        "embeds": embeds[:4]  # Discord limit
     }
 
 
@@ -387,18 +332,18 @@ def main():
     odds = load_latest_odds(csv_path)
     print(f"Loaded {len(odds)} odds records")
 
-    print(f"Checking for arbs in Illinois-legal books: {', '.join(sorted(ILLINOIS_BOOKS))}")
-    opportunities = find_arbitrage_opportunities(odds, ILLINOIS_BOOKS)
+    print(f"Finding tight lines (<{MAX_IMPLIED_PROB * 100}% implied prob)")
+    tight_lines = find_tight_lines(odds, ILLINOIS_BOOKS)
 
-    print(f"Found {len(opportunities)} arbitrage opportunities")
+    print(f"Found {len(tight_lines)} tight line opportunities")
 
-    if opportunities:
-        for opp in opportunities:
-            print(f"  {opp['roi_percent']}% - {opp['away_team']} @ {opp['home_team']} ({opp['market']})")
-            for leg in opp['legs']:
-                print(f"    {leg['side']} @ {leg['book'].upper()}: {leg['odds']} (${leg['stake']})")
+    if tight_lines:
+        for tl in tight_lines:
+            print(f"  {tl['gap_to_arb']:.1f}% gap - {tl['away_team']} @ {tl['home_team']} ({tl['market']})")
+            for leg in tl['legs']:
+                print(f"    {leg['side']} @ {leg['book'].upper()}: {leg['odds']}")
 
-        message = format_discord_message(opportunities)
+        message = format_discord_message(tight_lines)
         if message and DISCORD_WEBHOOK_URL:
             print("Sending Discord alert...")
             if send_discord_alert(message):
@@ -406,7 +351,13 @@ def main():
             else:
                 print("Failed to send alert")
     else:
-        print("No arbitrage opportunities found")
+        print("No tight lines found - odds may have shifted")
+        # Still send a summary even if empty
+        if DISCORD_WEBHOOK_URL:
+            empty_message = {
+                "content": "**☀️ Morning Summary: No Tight Lines Today**\nNo games are close to arbitrage right now. Check back later!"
+            }
+            send_discord_alert(empty_message)
 
     return 0
 
