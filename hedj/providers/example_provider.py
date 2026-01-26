@@ -44,8 +44,8 @@ class ExampleProvider(OddsProvider):
     def book_name(self) -> str:
         return self._book_name
 
-    def fetch_odds(self, sports: List[str]) -> List[EventOdds]:
-        """Fetch odds for the given sports.
+    def fetch_odds(self, sports: List[str], futures: Optional[List[str]] = None) -> List[EventOdds]:
+        """Fetch odds for the given sports and futures.
 
         If API key is 'STUB' or API call fails, returns stub data for testing.
         """
@@ -62,6 +62,15 @@ class ExampleProvider(OddsProvider):
             except Exception as e:
                 logger.warning(f"Failed to fetch {sport}, using stub data: {e}")
                 all_events.extend(self._get_stub_data([sport]))
+
+        # Fetch futures (outrights)
+        if futures:
+            for future in futures:
+                try:
+                    events = self._fetch_futures(future)
+                    all_events.extend(events)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch futures {future}: {e}")
 
         return all_events
 
@@ -96,6 +105,112 @@ class ExampleProvider(OddsProvider):
             self._save_raw(sport, data)
 
         return self._parse_response(data, sport)
+
+    def _fetch_futures(self, future: str) -> List[EventOdds]:
+        """Fetch futures/outrights odds from the API."""
+        params = {
+            "apiKey": self.api_key,
+            "regions": ",".join(self.regions),
+            "markets": "outrights",
+            "oddsFormat": "american",
+            "bookmakers": ",".join(self.books),
+        }
+
+        url = f"{self.base_url}/{future}/odds"
+        logger.info(f"Fetching futures from {url}")
+
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+
+        # Track API usage
+        requests_used = response.headers.get("x-requests-used")
+        requests_remaining = response.headers.get("x-requests-remaining")
+        if requests_used:
+            self.api_requests_used = int(requests_used)
+        if requests_remaining:
+            self.api_requests_remaining = int(requests_remaining)
+            logger.info(f"API quota: {requests_remaining} requests remaining")
+
+        if self.raw_directory:
+            self._save_raw(future, data)
+
+        return self._parse_futures_response(data, future)
+
+    def _parse_futures_response(self, data: List[dict], future: str) -> List[EventOdds]:
+        """Parse futures/outrights API response."""
+        events: List[EventOdds] = []
+
+        # Futures don't have home/away teams - each event is the whole market
+        for event_data in data:
+            event_id = event_data.get("id", "")
+            commence_time = event_data.get("commence_time")
+
+            start_time = None
+            if commence_time:
+                try:
+                    start_time = datetime.fromisoformat(commence_time.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+
+            # Parse bookmakers - for futures, outcomes are team names with prices
+            markets: List[MarketOdds] = []
+            for bookmaker in event_data.get("bookmakers", []):
+                book_key = bookmaker.get("key", "")
+                if book_key not in self.books:
+                    continue
+
+                for market_data in bookmaker.get("markets", []):
+                    if market_data.get("key") != "outrights":
+                        continue
+
+                    # Each outcome is a team with a price
+                    for outcome in market_data.get("outcomes", []):
+                        team_name = outcome.get("name", "")
+                        price = outcome.get("price", 0)
+
+                        if team_name and price:
+                            markets.append(
+                                MarketOdds(
+                                    market_type="futures",
+                                    book=book_key,
+                                    outcomes=[
+                                        OutcomeOdds(outcome=team_name, price=price)
+                                    ],
+                                )
+                            )
+
+            if markets:
+                events.append(
+                    EventOdds(
+                        event_id=event_id,
+                        sport=self._normalize_futures(future),
+                        home_team=self._get_futures_title(future),
+                        away_team="",  # No away team for futures
+                        start_time=start_time,
+                        markets=markets,
+                    )
+                )
+
+        return events
+
+    def _normalize_futures(self, future: str) -> str:
+        """Normalize futures identifier."""
+        mapping = {
+            "americanfootball_nfl_super_bowl_winner": "NFL Futures",
+            "basketball_nba_championship_winner": "NBA Futures",
+            "icehockey_nhl_championship_winner": "NHL Futures",
+        }
+        return mapping.get(future, future.upper())
+
+    def _get_futures_title(self, future: str) -> str:
+        """Get human-readable futures title."""
+        mapping = {
+            "americanfootball_nfl_super_bowl_winner": "Super Bowl Winner",
+            "basketball_nba_championship_winner": "NBA Championship",
+            "icehockey_nhl_championship_winner": "Stanley Cup Winner",
+        }
+        return mapping.get(future, future)
 
     def _save_raw(self, sport: str, data: Any) -> None:
         """Save raw API response to file."""

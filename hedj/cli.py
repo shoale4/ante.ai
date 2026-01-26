@@ -63,16 +63,21 @@ def run_update(config: dict, fetch_props: bool = False) -> None:
     provider = create_provider(config)
     logger.info(f"Using provider: {provider.__class__.__name__} ({provider.book_name})")
 
-    # Get sports to fetch
+    # Get sports and futures to fetch
     sports = config.get("provider", {}).get("sports", [])
-    if not sports:
-        logger.warning("No sports configured, nothing to fetch")
+    futures = config.get("provider", {}).get("futures", [])
+
+    if not sports and not futures:
+        logger.warning("No sports or futures configured, nothing to fetch")
         return
 
-    logger.info(f"Fetching odds for: {', '.join(sports)}")
+    if sports:
+        logger.info(f"Fetching odds for: {', '.join(sports)}")
+    if futures:
+        logger.info(f"Fetching futures for: {', '.join(futures)}")
 
-    # Fetch odds
-    events: List[EventOdds] = provider.fetch_odds(sports)
+    # Fetch odds (including futures)
+    events: List[EventOdds] = provider.fetch_odds(sports, futures=futures)
     logger.info(f"Fetched {len(events)} events")
 
     if not events:
